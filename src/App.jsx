@@ -26,6 +26,7 @@ export default function ComposerTimeline() {
 	useEffect(() => {
 		const fetchData = async () => {
 			const response = await fetch("data/composers.csv");
+			console.info(response);
 			const csvText = await response.text();
 			const parsed = Papa.parse(csvText, { header: true }).data;
 
