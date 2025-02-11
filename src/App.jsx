@@ -23,10 +23,32 @@ export default function ComposerTimeline() {
 			.replace(/'/g, "&#039;");
 	};
 
+	// Check if the data file exists
+	useEffect(() => {
+		const checkDataFile = async () => {
+			try {
+				const response = await fetch(import.meta.env.VITE_DATA_FILE_PATH);
+				if (!response.ok) {
+					throw new Error(`Data file not found at ${import.meta.env.VITE_DATA_FILE_PATH}`);
+				}
+
+				console.info("Data file exists.", response);
+			} catch (error) {
+				console.error("Error checking data file:", error);
+				throw new Error(
+					`Unable to access data file at ${
+						import.meta.env.VITE_DATA_FILE_PATH
+					}. Please verify the path is correct in your .env file.`
+				);
+			}
+		};
+
+		checkDataFile();
+	}, []);
+
 	useEffect(() => {
 		const fetchData = async () => {
-			const response = await fetch("data/composers.csv");
-			console.info(response);
+			const response = await fetch(import.meta.env.VITE_DATA_FILE_PATH);
 			const csvText = await response.text();
 			const parsed = Papa.parse(csvText, { header: true }).data;
 
