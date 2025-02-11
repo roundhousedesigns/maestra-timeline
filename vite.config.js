@@ -6,19 +6,19 @@ export default defineConfig({
 	server: {
 		port: 3000,
 	},
-	// build: {
-	// 	rollupOptions: {
-	// 		makeAbsoluteExternalsRelative: true,
-	// 		preserveEntrySignatures: "strict",
-	// 		output: {
-	// 			esModule: true,
-	// 			generatedCode: {
-	// 				reservedNamesAsProps: false,
-	// 			},
-	// 			interop: "compat",
-	// 			systemNullSetters: false,
-	// 		},
-	// 	},
-	// 	chunkSizeWarningLimit: 1400,
-	// },
+	build: {
+		rollupOptions: {
+			makeAbsoluteExternalsRelative: true,
+			preserveEntrySignatures: "strict",
+			output: {
+				esModule: true,
+				generatedCode: {
+					reservedNamesAsProps: false,
+				},
+				interop: "compat",
+				systemNullSetters: false,
+			},
+		},
+		chunkSizeWarningLimit: 1400,
+	},
 });
