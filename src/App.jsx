@@ -11,12 +11,11 @@ export default function ConductorTimeline() {
 	// Move these constants outside of the useEffect
 	const margin = { top: 50, right: 100, bottom: 150, left: 100 };
 	const showWidth = 200; // Fixed width for all shows
-	const numTracks = 4;
-	const trackHeight = 60;
-	const showHeight = 50;
-	const trackPadding = 10;
-	const nameHeight = 16; // Height per name
-	const namePadding = 10; // Padding between names and show rectangle
+	const trackHeight = 50; // Slightly reduced height to accommodate more lanes
+	const showHeight = 40; // Adjusted to match new track height
+	const trackPadding = 8; // Reduced padding to fit more lanes
+	const nameHeight = 14; // Slightly reduced to fit more content
+	const namePadding = 8; // Reduced padding to fit more content
 	const minZoom = 0.1;
 	const maxZoom = 10;
 	const hoverDelay = 300; // milliseconds
@@ -65,13 +64,53 @@ export default function ConductorTimeline() {
 		return null;
 	};
 
-	const assignTracks = (items, numTracks = 4) => {
+	const assignTracks = (items) => {
 		// Sort items chronologically first
 		const sortedItems = [...items].sort((a, b) => a.start - b.start);
 
-		// Simply assign tracks in a round-robin fashion
-		sortedItems.forEach((item, index) => {
-			item.track = index % numTracks;
+		// Find the maximum number of concurrent shows
+		const events = [];
+		sortedItems.forEach((item) => {
+			events.push({ time: item.start, type: 'start', item });
+			events.push({ time: item.end, type: 'end', item });
+		});
+		events.sort((a, b) => a.time - b.time);
+
+		let activeShows = 0;
+		let maxConcurrentShows = 0;
+		events.forEach((event) => {
+			if (event.type === 'start') {
+				activeShows++;
+				maxConcurrentShows = Math.max(maxConcurrentShows, activeShows);
+			} else {
+				activeShows--;
+			}
+		});
+
+		// Use the maximum number of concurrent shows as the number of lanes
+		const requiredLanes = maxConcurrentShows;
+
+		// Assign lanes to ensure no overlaps
+		const lanes = new Array(requiredLanes).fill(null);
+		sortedItems.forEach((item) => {
+			// Find the first available lane
+			let assignedLane = -1;
+			for (let lane = 0; lane < requiredLanes; lane++) {
+				const currentItem = lanes[lane];
+				if (!currentItem || currentItem.end <= item.start) {
+					assignedLane = lane;
+					break;
+				}
+			}
+
+			if (assignedLane === -1) {
+				// This should never happen due to our lane calculation
+				console.error("Failed to assign lane for item:", item);
+				assignedLane = 0;
+			}
+
+			item.track = assignedLane;
+			lanes[assignedLane] = item;
 		});
 
 		return sortedItems;
@@ -80,32 +119,29 @@ export default function ConductorTimeline() {
 	useEffect(() => {
 		const fetchData = async () => {
 			if (!isLoading) return; // Prevent duplicate loads
-			
+
 			try {
 				console.log("Fetching data from:", import.meta.env.VITE_DATA_SOURCE_URL);
 				const response = await fetch(import.meta.env.VITE_DATA_SOURCE_URL);
 				const csvText = await response.text();
 				console.log("Raw CSV text:", csvText);
-				
-				const parsed = Papa.parse(csvText, { 
+
+				const parsed = Papa.parse(csvText, {
 					header: true,
 					skipEmptyLines: true,
 					transformHeader: (header) => {
 						// Clean up Google Sheets header formatting
-						return header
-							.replace(/\n/g, ' ')
-							.replace(/\s+/g, ' ')
-							.trim();
+						return header.replace(/\n/g, " ").replace(/\s+/g, " ").trim();
 					},
-					transform: (value) => value.trim()
+					transform: (value) => value.trim(),
 				});
-				
+
 				console.log("Parse results:", {
 					errors: parsed.errors,
 					meta: parsed.meta,
 					dataLength: parsed.data.length,
 					firstRow: parsed.data[0],
-					headers: parsed.meta.fields
+					headers: parsed.meta.fields,
 				});
 
 				// Group shows with their conductors
@@ -140,7 +176,7 @@ export default function ConductorTimeline() {
 							opening: show.opening,
 							closing: show.closing,
 							rawOpening: show.rawOpening,
-							rawClosing: show.rawClosing
+							rawClosing: show.rawClosing,
 						});
 						return {
 							title: showName,
@@ -180,6 +216,10 @@ export default function ConductorTimeline() {
 		// Create D3 visualization
 		const width = Math.max(window.innerWidth * 2, timelineData.length * 50);
 
+		// Calculate the number of lanes needed
+		const numLanes = Math.max(...timelineData.map(item => item.track)) + 1;
+		const totalHeight = numLanes * (trackHeight + trackPadding) + margin.top + margin.bottom;
+
 		// Clear previous content
 		d3.select(timelineRef.current).selectAll("*").remove();
 
@@ -188,7 +228,7 @@ export default function ConductorTimeline() {
 			.select(timelineRef.current)
 			.append("svg")
 			.attr("width", width + margin.left + margin.right)
-			.attr("height", numTracks * (trackHeight + trackPadding) + margin.top + margin.bottom);
+			.attr("height", totalHeight);
 
 		// Update the zoom behavior to handle scaling of shows
 		const zoom = d3
@@ -203,15 +243,14 @@ export default function ConductorTimeline() {
 				xAxisGroup.call(xAxis.scale(newScale));
 
 				// Scale the shows based on zoom level
-				shows.each(function () {
+				shows.each(function (d) {
 					const show = d3.select(this);
 					const currentScale = event.transform.k;
 
-					// Scale the show rectangle width
-					show.select(".show-header").attr("width", showWidth * currentScale);
-
-					// Scale the background rectangle for people list
-					show.select(".people-background").attr("width", showWidth * currentScale);
+					// Update show width based on duration
+					const start = newScale(d.start);
+					const end = newScale(d.end);
+					show.select(".show-header").attr("width", Math.max(showWidth * currentScale, end - start));
 
 					// Update text positions and size
 					show
@@ -259,19 +298,36 @@ export default function ConductorTimeline() {
 			.attr("dy", ".15em")
 			.attr("transform", "rotate(-45)");
 
-		// Add track backgrounds
+		// Add swimlane backgrounds
 		mainGroup
-			.selectAll(".track-bg")
-			.data(d3.range(numTracks))
+			.selectAll(".swimlane-bg")
+			.data(d3.range(numLanes))
 			.enter()
 			.append("rect")
-			.attr("class", "track-bg")
+			.attr("class", "swimlane-bg")
 			.attr("x", -margin.left)
 			.attr("y", (d) => d * (trackHeight + trackPadding))
 			.attr("width", width + margin.left + margin.right)
 			.attr("height", trackHeight)
 			.attr("fill", (d, i) => (i % 2 === 0 ? "#f8f9fa" : "#ffffff"))
-			.attr("opacity", 0.5);
+			.attr("opacity", 0.5)
+			.style("pointer-events", "none");
+
+		// Add swimlane labels
+		mainGroup
+			.append("g")
+			.attr("class", "swimlane-labels")
+			.selectAll(".swimlane-label")
+			.data(d3.range(numLanes))
+			.enter()
+			.append("text")
+			.attr("class", "swimlane-label")
+			.attr("x", -margin.left + 10)
+			.attr("y", (d) => (d + 0.5) * (trackHeight + trackPadding))
+			.attr("dy", "0.35em")
+			.text((d) => `Lane ${d + 1}`)
+			.style("font-size", "12px")
+			.style("fill", "#666");
 
 		// Update show positioning
 		const shows = mainGroup
@@ -286,25 +342,32 @@ export default function ConductorTimeline() {
 				return `translate(${isNaN(x) ? 0 : x},${isNaN(y) ? 0 : y})`;
 			});
 
-		// Update show rectangles to fixed width
+		// Update show rectangles to show duration
 		shows
 			.append("rect")
 			.attr("class", "show-header")
-			.attr("width", showWidth)
+			.attr("width", (d) => {
+				const start = xScale(d.start);
+				const end = xScale(d.end);
+				return Math.max(showWidth, end - start);
+			})
 			.attr("height", showHeight)
 			.attr("fill", "#4a90e2")
 			.attr("opacity", 0.8)
 			.attr("rx", 4)
 			.attr("y", (trackHeight - showHeight) / 2);
 
-		// Update show titles
+		// Update show titles with duration indicator
 		shows
 			.append("text")
 			.attr("class", "show-title")
 			.attr("x", 8)
 			.attr("y", trackHeight / 2)
 			.attr("dy", ".35em")
-			.text((d) => d.title)
+			.text((d) => {
+				const duration = Math.round((d.end - d.start) / (1000 * 60 * 60 * 24 * 30)); // Duration in months
+				return `${d.title} (${duration} months)`;
+			})
 			.style("fill", "white")
 			.style("font-size", "13px")
 			.style("font-weight", "bold");
