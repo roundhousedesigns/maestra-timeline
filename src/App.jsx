@@ -9,8 +9,10 @@ function App() {
 	});
 	const [selectedShow, setSelectedShow] = useState(null);
 	const [isPanelOpen, setIsPanelOpen] = useState(false);
+	const [selectedPerson, setSelectedPerson] = useState(null);
 	const sidePanelRef = useRef(null);
 	const timelineRef = useRef(null);
+	const timelineInstanceRef = useRef(null);
 
 	useEffect(() => {
 		// Load and process CSV data
@@ -67,19 +69,22 @@ function App() {
 		};
 
 		const timeline = new Timeline(container, timelineData.items, null, options);
+		timelineInstanceRef.current = timeline;
 
 		// Add click handler
-		timeline.on("click", (properties) => {
+		timeline.on('click', (properties) => {
 			if (properties.item) {
-				const item = timelineData.items.find((i) => i.id === properties.item);
+				const item = timelineData.items.find(i => i.id === properties.item);
 				if (item) {
 					setSelectedShow(item);
 					setIsPanelOpen(true);
+					setSelectedPerson(null);
+					// Add selected class to the clicked item
+					timeline.setSelection(properties.item);
 				}
 			}
 		});
 
-		// Clean up
 		return () => {
 			timeline.destroy();
 		};
@@ -108,6 +113,31 @@ function App() {
 		};
 	}, [isPanelOpen]);
 
+	// Function to handle person click
+	const handlePersonClick = (person) => {
+		setSelectedPerson(person);
+	};
+
+	// Function to handle show click from person's shows list
+	const handleShowClick = (showId) => {
+		const show = timelineData.items.find(item => item.id === showId);
+		if (show) {
+			setSelectedShow(show);
+			setSelectedPerson(null);
+			// Scroll to the show in the timeline
+			timelineInstanceRef.current.moveTo(show.start);
+			// Highlight the show
+			timelineInstanceRef.current.setSelection(showId);
+		}
+	};
+
+	// Function to get all shows for a person
+	const getPersonShows = (personName) => {
+		return timelineData.items.filter(item => 
+			item.people.some(p => p.name === personName)
+		);
+	};
+
 	return (
 		<div className="app">
 			<h1>Broadway Shows Timeline</h1>
@@ -119,11 +149,40 @@ function App() {
 				>
 					<button 
 						className="close-button"
-						onClick={() => setIsPanelOpen(false)}
+						onClick={() => {
+							setIsPanelOpen(false);
+							setSelectedPerson(null);
+						}}
 					>
 						×
 					</button>
-					{selectedShow && (
+					{selectedPerson ? (
+						<div className="person-details">
+							<h2>{selectedPerson.name}</h2>
+							<div className="person-info">
+								<p className="position">{selectedPerson.position}</p>
+								{selectedPerson.notes && <p className="notes">{selectedPerson.notes}</p>}
+								<div className="shows-list">
+									<h3>Shows</h3>
+									{getPersonShows(selectedPerson.name).map((show, index) => (
+										<div 
+											key={index} 
+											className="show-link"
+											onClick={() => handleShowClick(show.id)}
+										>
+											<h4>{show.content}</h4>
+											<p className="dates">
+												{new Date(show.start).toLocaleDateString()} to {new Date(show.end).toLocaleDateString()}
+											</p>
+											<p className="type">
+												{show.showType === 'revival' ? 'Revival' : 'Original Production'}
+											</p>
+										</div>
+									))}
+								</div>
+							</div>
+						</div>
+					) : selectedShow && (
 						<div className="show-details">
 							<h2>{selectedShow.content}</h2>
 							<div className="show-info">
@@ -137,7 +196,12 @@ function App() {
 									<h3>People</h3>
 									{selectedShow.people?.map((person, index) => (
 										<div key={index} className="person">
-											<h4>{person.name}</h4>
+											<h4 
+												className="person-name"
+												onClick={() => handlePersonClick(person)}
+											>
+												{person.name}
+											</h4>
 											<p className="position">{person.position}</p>
 											{person.notes && <p className="notes">{person.notes}</p>}
 										</div>
