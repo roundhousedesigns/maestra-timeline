@@ -142,7 +142,6 @@ function App() {
 
 	return (
 		<div className='app'>
-			<h1>Broadway Shows Timeline</h1>
 			<div className='timeline-container'>
 				<div id='timeline' className='timeline' ref={timelineRef}></div>
 				<div
