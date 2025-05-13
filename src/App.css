@@ -1,3 +1,23 @@
+/**
+ * Timeline styling
+ */
+
+:root {
+	--black: #000;
+	--white: #ffffff;
+	--light-gray: #f5f7fb;
+	--gray: #d2d4dc;
+	--dark-gray: #43464a;
+	--text: #131939;
+	--coral: #e9b79f;
+	--coral-lighter: #edcbbb;
+	--coral-lightest: rgba(233, 183, 159, 0.14);
+	--cream: #f2ebe1;
+	--tan: #ecd8c5;
+	--baby-blue: #9fd3e9;
+	--forest-green: #213c20;
+}
+
 .app {
 	padding: 20px;
 	max-width: 100%;
@@ -10,7 +30,15 @@ h1 {
 	color: #333;
 }
 
-#timeline {
+.timeline-container {
+	position: relative;
+	display: flex;
+	width: 100%;
+}
+
+.timeline {
+	width: 100%;
+	height: 80vh;
 	border: 1px solid #ccc;
 	border-radius: 4px;
 	background: #fff;
@@ -22,7 +50,7 @@ h1 {
 	border-radius: 4px;
 	padding: 4px 8px;
 	font-size: 12px;
-	color: #333 !important;
+	color: var(--text) !important;
 	transition: all 0.2s ease;
 	text-align: center;
 	white-space: nowrap;
@@ -33,14 +61,14 @@ h1 {
 
 /* Original show styling */
 .show-item.original {
-	background-color: #e6f3ff !important;
-	border: 1px solid #b3d9ff !important;
+	background-color: var(--baby-blue) !important;
+	border: 1px solid var(--baby-blue) !important;
 }
 
 /* Revival show styling */
 .show-item.revival {
-	background-color: #fff0e6 !important;
-	border: 1px solid #ffd6b3 !important;
+	background-color: var(--coral) !important;
+	border: 1px solid var(--coral) !important;
 }
 
 /* Hover effects */
@@ -53,47 +81,72 @@ h1 {
 
 /* Timeline axis styling */
 .vis-time-axis {
-	background-color: #f8f8f8;
-	border-bottom: 1px solid #ddd;
+	background-color: var(--light-gray);
+	border-bottom: 1px solid var(--gray);
 }
 
 .vis-time-axis .vis-text {
-	color: #666;
+	color: var(--dark-gray);
 	font-size: 12px;
 }
 
 /* Tooltip styling */
-.vis-tooltip {
-	background-color: rgba(0, 0, 0, 0.9);
-	color: white;
+.custom-tooltip {
+	background-color: var(--coral-lighter);
+	color: var(--text);
 	padding: 8px 12px;
 	border-radius: 4px;
 	font-size: 12px;
 	white-space: pre-line;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 	z-index: 1000;
+	pointer-events: auto;
+	transition: opacity 0.2s ease-in-out !important;
+}
+
+/* Custom tooltip content styling */
+.custom-tooltip-content {
+	pointer-events: auto !important;
+}
+
+/* Add hover state for tooltip */
+.vis-tooltip:hover,
+.custom-tooltip-content:hover {
+	opacity: 1 !important;
+}
+
+/* Add styles for future interactive elements */
+.vis-tooltip a,
+.custom-tooltip-content a {
+	color: #4a90e2 !important;
+	text-decoration: none !important;
+}
+
+.vis-tooltip a:hover,
+.custom-tooltip-content a:hover {
+	text-decoration: underline !important;
 }
 
 /* Timeline navigation buttons */
 .vis-button {
-	background-color: #4a90e2 !important;
-	border-color: #357abd !important;
-	color: white !important;
+	background-color: var(--baby-blue) !important;
+	border-color: var(--baby-blue) !important;
+	color: var(--white) !important;
 }
 
 .vis-button:hover {
-	background-color: #357abd !important;
+	background-color: var(--baby-blue) !important;
 }
 
 /* Timeline labels */
 .vis-label {
 	font-weight: 500;
-	color: #333;
+	color: var(--text);
 }
 
 /* Timeline panel */
 .vis-panel {
-	background-color: #fff;
+	background-color: var(--white);
 }
 
 /* Timeline item content */
@@ -107,12 +160,12 @@ h1 {
 
 /* Timeline background */
 .vis-background {
-	background-color: #f8f8f8;
+	background-color: var(--light-gray);
 }
 
 /* Timeline current time */
 .vis-current-time {
-	background-color: #ff0000;
+	background-color: var(--coral);
 	width: 2px;
 }
 
@@ -128,4 +181,130 @@ h1 {
 /* Improve visibility of stacked items */
 .vis-item {
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Custom tooltip styling */
+.custom-tooltip {
+	position: fixed;
+	background-color: rgba(0, 0, 0, 0.9);
+	color: white;
+	padding: 8px 12px;
+	border-radius: 4px;
+	font-size: 12px;
+	white-space: pre-line;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	z-index: 1000;
+	pointer-events: auto;
+	transition: opacity 0.2s ease-in-out;
+}
+
+/* Add hover state for tooltip */
+.custom-tooltip:hover {
+	opacity: 1 !important;
+}
+
+/* Add styles for future interactive elements */
+.custom-tooltip a {
+	color: #4a90e2;
+	text-decoration: none;
+}
+
+.custom-tooltip a:hover {
+	text-decoration: underline;
+}
+
+.side-panel {
+	position: fixed;
+	right: -400px;
+	top: 0;
+	width: 400px;
+	height: 100vh;
+	background: white;
+	box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+	transition: right 0.3s ease-in-out;
+	z-index: 1000;
+	padding: 20px;
+	overflow-y: auto;
+}
+
+.side-panel.open {
+	right: 0;
+}
+
+.close-button {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	background: none;
+	border: none;
+	font-size: 24px;
+	cursor: pointer;
+	color: #666;
+}
+
+.show-details {
+	padding: 20px;
+}
+
+.show-details h2 {
+	margin-top: 0;
+	color: #333;
+	font-size: 24px;
+}
+
+.show-info {
+	margin-top: 20px;
+}
+
+.dates {
+	color: #666;
+	font-size: 14px;
+}
+
+.type {
+	display: inline-block;
+	padding: 4px 8px;
+	background: #f0f0f0;
+	border-radius: 4px;
+	font-size: 12px;
+	margin: 10px 0;
+}
+
+.people-list {
+	margin-top: 20px;
+}
+
+.people-list h3 {
+	color: #333;
+	font-size: 18px;
+	margin-bottom: 15px;
+}
+
+.person {
+	margin-bottom: 20px;
+	padding-bottom: 20px;
+	border-bottom: 1px solid #eee;
+}
+
+.person:last-child {
+	border-bottom: none;
+}
+
+.person h4 {
+	margin: 0;
+	color: #333;
+	font-size: 16px;
+}
+
+.person .position {
+	color: #666;
+	font-size: 14px;
+	margin: 5px 0;
+}
+
+.person .notes {
+	color: #888;
+	font-size: 12px;
+	font-style: italic;
+	margin: 5px 0;
 }

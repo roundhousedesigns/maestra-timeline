@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Timeline } from "vis-timeline/standalone";
 import "vis-timeline/styles/vis-timeline-graph2d.css";
 import "./App.css";
@@ -7,6 +7,10 @@ function App() {
 	const [timelineData, setTimelineData] = useState({
 		items: [],
 	});
+	const [selectedShow, setSelectedShow] = useState(null);
+	const [isPanelOpen, setIsPanelOpen] = useState(false);
+	const sidePanelRef = useRef(null);
+	const timelineRef = useRef(null);
 
 	useEffect(() => {
 		// Load and process CSV data
@@ -53,8 +57,8 @@ function App() {
 					vertical: 5,
 				},
 			},
-			// Improve text visibility
-			showTooltips: true,
+			// Disable default tooltips
+			showTooltips: false,
 			// Set zoom constraints
 			zoomMin: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
 			zoomMax: 1000 * 60 * 60 * 24 * 365 * 60, // 60 years
@@ -64,46 +68,86 @@ function App() {
 
 		const timeline = new Timeline(container, timelineData.items, null, options);
 
-		// Set initial zoom level to 16454 days
-		const initialZoom = 1000 * 60 * 60 * 24 * 13000; // 16454 days in milliseconds
-		const initialStart = new Date(1915, 0, 1);
-		const initialEnd = new Date(initialStart.getTime() + initialZoom);
-		timeline.setWindow(initialStart, initialEnd);
-
-		// Add custom mousewheel handler
-		container.addEventListener(
-			"wheel",
-			(event) => {
-				event.preventDefault();
-				const window = timeline.getWindow();
-				const scrollAmount = window.end - window.start;
-
-				if (event.deltaY < 0) {
-					// Scrolling up - move backward in time (earlier)
-					timeline.setWindow(
-						new Date(window.start.getTime() - scrollAmount),
-						new Date(window.end.getTime() - scrollAmount)
-					);
-				} else {
-					// Scrolling down - move forward in time (later)
-					timeline.setWindow(
-						new Date(window.start.getTime() + scrollAmount),
-						new Date(window.end.getTime() + scrollAmount)
-					);
+		// Add click handler
+		timeline.on("click", (properties) => {
+			if (properties.item) {
+				const item = timelineData.items.find((i) => i.id === properties.item);
+				if (item) {
+					setSelectedShow(item);
+					setIsPanelOpen(true);
 				}
-			},
-			{ passive: false }
-		);
+			}
+		});
 
+		// Clean up
 		return () => {
 			timeline.destroy();
 		};
 	}, [timelineData]);
 
+	// Add click outside handler
+	useEffect(() => {
+		function handleClickOutside(event) {
+			// Check if click is outside both the side panel and the timeline
+			if (sidePanelRef.current && 
+				!sidePanelRef.current.contains(event.target) && 
+				timelineRef.current && 
+				!timelineRef.current.contains(event.target)) {
+				setIsPanelOpen(false);
+			}
+		}
+
+		// Only add the listener if the panel is open
+		if (isPanelOpen) {
+			document.addEventListener('mousedown', handleClickOutside);
+		}
+
+		// Cleanup
+		return () => {
+			document.removeEventListener('mousedown', handleClickOutside);
+		};
+	}, [isPanelOpen]);
+
 	return (
-		<div className='app'>
+		<div className="app">
 			<h1>Broadway Shows Timeline</h1>
-			<div id='timeline'></div>
+			<div className="timeline-container">
+				<div id="timeline" className="timeline" ref={timelineRef}></div>
+				<div 
+					ref={sidePanelRef}
+					className={`side-panel ${isPanelOpen ? 'open' : ''}`}
+				>
+					<button 
+						className="close-button"
+						onClick={() => setIsPanelOpen(false)}
+					>
+						×
+					</button>
+					{selectedShow && (
+						<div className="show-details">
+							<h2>{selectedShow.content}</h2>
+							<div className="show-info">
+								<p className="dates">
+									{new Date(selectedShow.start).toLocaleDateString()} to {new Date(selectedShow.end).toLocaleDateString()}
+								</p>
+								<p className="type">
+									{selectedShow.showType === 'revival' ? 'Revival' : 'Original Production'}
+								</p>
+								<div className="people-list">
+									<h3>People</h3>
+									{selectedShow.people?.map((person, index) => (
+										<div key={index} className="person">
+											<h4>{person.name}</h4>
+											<p className="position">{person.position}</p>
+											{person.notes && <p className="notes">{person.notes}</p>}
+										</div>
+									))}
+								</div>
+							</div>
+						</div>
+					)}
+				</div>
+			</div>
 		</div>
 	);
 }
@@ -116,17 +160,17 @@ function processCSVData(csvText) {
 	// Helper function to parse CSV line properly
 	function parseCSVLine(line) {
 		const result = [];
-		let current = '';
+		let current = "";
 		let inQuotes = false;
-		
+
 		for (let i = 0; i < line.length; i++) {
 			const char = line[i];
-			
+
 			if (char === '"') {
 				inQuotes = !inQuotes;
-			} else if (char === ',' && !inQuotes) {
+			} else if (char === "," && !inQuotes) {
 				result.push(current.trim());
-				current = '';
+				current = "";
 			} else {
 				current += char;
 			}
@@ -146,11 +190,15 @@ function processCSVData(csvText) {
 		if (!line) continue;
 
 		const values = parseCSVLine(line);
-		
+
 		const show = values[2];
 		const isRevival = values[3] === "Revival";
 		const startDate = values[4];
 		const endDate = values[5];
+		const firstName = values[1];
+		const lastName = values[0];
+		const position = values[7];
+		const notes = values[11];
 
 		// Skip if any required values are missing or empty
 		if (!show || !startDate || !endDate) continue;
@@ -160,7 +208,7 @@ function processCSVData(csvText) {
 		try {
 			start = new Date(startDate);
 			end = new Date(endDate);
-			
+
 			// Check if dates are valid
 			if (isNaN(start.getTime())) {
 				console.error(`Invalid start date for show "${show}": ${startDate}`);
@@ -182,14 +230,22 @@ function processCSVData(csvText) {
 				end,
 				positions: new Set(),
 				isRevival,
-				originalTitle: show, // Keep the original title for display
+				originalTitle: show,
+				people: [], // Initialize people array
 			});
-		} else {
-			const existing = showMap.get(normalizedShow);
-			// Update dates if this run is longer
-			if (start < existing.start) existing.start = start;
-			if (end > existing.end) existing.end = end;
 		}
+		
+		const existing = showMap.get(normalizedShow);
+		// Update dates if this run is longer
+		if (start < existing.start) existing.start = start;
+		if (end > existing.end) existing.end = end;
+		
+		// Add person to the show's people array
+		existing.people.push({
+			name: `${firstName} ${lastName}`,
+			position,
+			notes
+		});
 	}
 
 	// Second pass: create timeline items for each unique show
@@ -198,17 +254,15 @@ function processCSVData(csvText) {
 			id: normalizedShow,
 			start: data.start,
 			end: data.end,
-			content: data.originalTitle, // Use the original title for display
+			content: data.originalTitle,
 			title: `${data.originalTitle}\n${data.start.toLocaleDateString()} to ${data.end.toLocaleDateString()}\n${
 				data.isRevival ? "Revival" : "Original Production"
 			}`,
 			className: `show-item ${data.isRevival ? "revival" : "original"}`,
-			// Add custom data for styling
 			showType: data.isRevival ? "revival" : "original",
-			// Add subgroup for stacking
 			subgroup: data.isRevival ? "revival" : "original",
-			// Set type to box for automatic width
 			type: "box",
+			people: data.people, // Include people data in the timeline item
 		});
 	});
 
