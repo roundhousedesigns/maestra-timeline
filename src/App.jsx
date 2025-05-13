@@ -16,9 +16,7 @@ function App() {
 
 	useEffect(() => {
 		// Load and process CSV data
-		fetch(
-			"https://docs.google.com/spreadsheets/d/e/2PACX-1vRvvVsG5WsrvGu34883ArpF9AeXiJANjiSRS7r6lzy_-TmZE3LICU7k8BDoVp61hxZuf0jdlP_h6Uk3/pub?gid=0&single=true&output=csv"
-		)
+		fetch(import.meta.env.VITE_DATA_SOURCE_URL)
 			.then((response) => response.text())
 			.then((csvText) => {
 				const processedData = processCSVData(csvText);
