@@ -1,42 +1,131 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+.app {
+	padding: 20px;
+	max-width: 100%;
+	margin: 0 auto;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+h1 {
+	text-align: center;
+	margin-bottom: 20px;
+	color: #333;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+#timeline {
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	background: #fff;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* Timeline item styling */
+.show-item {
+	border-radius: 4px;
+	padding: 4px 8px;
+	font-size: 12px;
+	color: #333 !important;
+	transition: all 0.2s ease;
+	text-align: center;
+	white-space: nowrap;
+	overflow: visible;
+	text-overflow: clip;
+	opacity: 0.9;
 }
 
-.card {
-  padding: 2em;
+/* Original show styling */
+.show-item.original {
+	background-color: #e6f3ff !important;
+	border: 1px solid #b3d9ff !important;
 }
 
-.read-the-docs {
-  color: #888;
+/* Revival show styling */
+.show-item.revival {
+	background-color: #fff0e6 !important;
+	border: 1px solid #ffd6b3 !important;
+}
+
+/* Hover effects */
+.show-item:hover {
+	transform: scale(1.02);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	z-index: 1000;
+	opacity: 1;
+}
+
+/* Timeline axis styling */
+.vis-time-axis {
+	background-color: #f8f8f8;
+	border-bottom: 1px solid #ddd;
+}
+
+.vis-time-axis .vis-text {
+	color: #666;
+	font-size: 12px;
+}
+
+/* Tooltip styling */
+.vis-tooltip {
+	background-color: rgba(0, 0, 0, 0.9);
+	color: white;
+	padding: 8px 12px;
+	border-radius: 4px;
+	font-size: 12px;
+	white-space: pre-line;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	z-index: 1000;
+}
+
+/* Timeline navigation buttons */
+.vis-button {
+	background-color: #4a90e2 !important;
+	border-color: #357abd !important;
+	color: white !important;
+}
+
+.vis-button:hover {
+	background-color: #357abd !important;
+}
+
+/* Timeline labels */
+.vis-label {
+	font-weight: 500;
+	color: #333;
+}
+
+/* Timeline panel */
+.vis-panel {
+	background-color: #fff;
+}
+
+/* Timeline item content */
+.vis-item-content {
+	white-space: nowrap;
+	overflow: visible;
+	text-overflow: clip;
+	text-align: center;
+	padding: 0 4px;
+}
+
+/* Timeline background */
+.vis-background {
+	background-color: #f8f8f8;
+}
+
+/* Timeline current time */
+.vis-current-time {
+	background-color: #ff0000;
+	width: 2px;
+}
+
+/* Stacked items styling */
+.vis-item.vis-box {
+	border-radius: 4px;
+}
+
+.vis-item.vis-box.vis-selected {
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Improve visibility of stacked items */
+.vis-item {
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
