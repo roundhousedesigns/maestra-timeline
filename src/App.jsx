@@ -16,10 +16,10 @@ function App() {
 
 	useEffect(() => {
 		// Load and process CSV data
-		fetch("/src/data.csv")
+		fetch("/data.csv")
 			.then((response) => response.text())
-			.then((data) => {
-				const processedData = processCSVData(data);
+			.then((csvText) => {
+				const processedData = processCSVData(csvText);
 				setTimelineData(processedData);
 			});
 	}, []);
@@ -72,9 +72,9 @@ function App() {
 		timelineInstanceRef.current = timeline;
 
 		// Add click handler
-		timeline.on('click', (properties) => {
+		timeline.on("click", (properties) => {
 			if (properties.item) {
-				const item = timelineData.items.find(i => i.id === properties.item);
+				const item = timelineData.items.find((i) => i.id === properties.item);
 				if (item) {
 					setSelectedShow(item);
 					setIsPanelOpen(true);
@@ -94,22 +94,24 @@ function App() {
 	useEffect(() => {
 		function handleClickOutside(event) {
 			// Check if click is outside both the side panel and the timeline
-			if (sidePanelRef.current && 
-				!sidePanelRef.current.contains(event.target) && 
-				timelineRef.current && 
-				!timelineRef.current.contains(event.target)) {
+			if (
+				sidePanelRef.current &&
+				!sidePanelRef.current.contains(event.target) &&
+				timelineRef.current &&
+				!timelineRef.current.contains(event.target)
+			) {
 				setIsPanelOpen(false);
 			}
 		}
 
 		// Only add the listener if the panel is open
 		if (isPanelOpen) {
-			document.addEventListener('mousedown', handleClickOutside);
+			document.addEventListener("mousedown", handleClickOutside);
 		}
 
 		// Cleanup
 		return () => {
-			document.removeEventListener('mousedown', handleClickOutside);
+			document.removeEventListener("mousedown", handleClickOutside);
 		};
 	}, [isPanelOpen]);
 
@@ -120,7 +122,7 @@ function App() {
 
 	// Function to handle show click from person's shows list
 	const handleShowClick = (showId) => {
-		const show = timelineData.items.find(item => item.id === showId);
+		const show = timelineData.items.find((item) => item.id === showId);
 		if (show) {
 			setSelectedShow(show);
 			setSelectedPerson(null);
@@ -133,22 +135,22 @@ function App() {
 
 	// Function to get all shows for a person
 	const getPersonShows = (personName) => {
-		return timelineData.items.filter(item => 
-			item.people.some(p => p.name === personName)
+		return timelineData.items.filter((item) =>
+			item.people.some((p) => p.name === personName)
 		);
 	};
 
 	return (
-		<div className="app">
+		<div className='app'>
 			<h1>Broadway Shows Timeline</h1>
-			<div className="timeline-container">
-				<div id="timeline" className="timeline" ref={timelineRef}></div>
-				<div 
+			<div className='timeline-container'>
+				<div id='timeline' className='timeline' ref={timelineRef}></div>
+				<div
 					ref={sidePanelRef}
-					className={`side-panel ${isPanelOpen ? 'open' : ''}`}
+					className={`side-panel ${isPanelOpen ? "open" : ""}`}
 				>
-					<button 
-						className="close-button"
+					<button
+						className='close-button'
 						onClick={() => {
 							setIsPanelOpen(false);
 							setSelectedPerson(null);
@@ -157,58 +159,70 @@ function App() {
 						×
 					</button>
 					{selectedPerson ? (
-						<div className="person-details">
+						<div className='person-details'>
 							<h2>{selectedPerson.name}</h2>
-							<div className="person-info">
-								<p className="position">{selectedPerson.position}</p>
-								{selectedPerson.notes && <p className="notes">{selectedPerson.notes}</p>}
-								<div className="shows-list">
+							<div className='person-info'>
+								<p className='position'>{selectedPerson.position}</p>
+								{selectedPerson.notes && (
+									<p className='notes'>{selectedPerson.notes}</p>
+								)}
+								<div className='shows-list'>
 									<h3>Shows</h3>
 									{getPersonShows(selectedPerson.name).map((show, index) => (
-										<div 
-											key={index} 
-											className="show-link"
+										<div
+											key={index}
+											className='show-link'
 											onClick={() => handleShowClick(show.id)}
 										>
 											<h4>{show.content}</h4>
-											<p className="dates">
-												{new Date(show.start).toLocaleDateString()} to {new Date(show.end).toLocaleDateString()}
+											<p className='dates'>
+												{new Date(show.start).toLocaleDateString()} to{" "}
+												{new Date(show.end).toLocaleDateString()}
 											</p>
-											<p className="type">
-												{show.showType === 'revival' ? 'Revival' : 'Original Production'}
+											<p className='type'>
+												{show.showType === "revival"
+													? "Revival"
+													: "Original Production"}
 											</p>
 										</div>
 									))}
 								</div>
 							</div>
 						</div>
-					) : selectedShow && (
-						<div className="show-details">
-							<h2>{selectedShow.content}</h2>
-							<div className="show-info">
-								<p className="dates">
-									{new Date(selectedShow.start).toLocaleDateString()} to {new Date(selectedShow.end).toLocaleDateString()}
-								</p>
-								<p className="type">
-									{selectedShow.showType === 'revival' ? 'Revival' : 'Original Production'}
-								</p>
-								<div className="people-list">
-									<h3>People</h3>
-									{selectedShow.people?.map((person, index) => (
-										<div key={index} className="person">
-											<h4 
-												className="person-name"
-												onClick={() => handlePersonClick(person)}
-											>
-												{person.name}
-											</h4>
-											<p className="position">{person.position}</p>
-											{person.notes && <p className="notes">{person.notes}</p>}
-										</div>
-									))}
+					) : (
+						selectedShow && (
+							<div className='show-details'>
+								<h2>{selectedShow.content}</h2>
+								<div className='show-info'>
+									<p className='dates'>
+										{new Date(selectedShow.start).toLocaleDateString()} to{" "}
+										{new Date(selectedShow.end).toLocaleDateString()}
+									</p>
+									<p className='type'>
+										{selectedShow.showType === "revival"
+											? "Revival"
+											: "Original Production"}
+									</p>
+									<div className='people-list'>
+										<h3>People</h3>
+										{selectedShow.people?.map((person, index) => (
+											<div key={index} className='person'>
+												<h4
+													className='person-name'
+													onClick={() => handlePersonClick(person)}
+												>
+													{person.name}
+												</h4>
+												<p className='position'>{person.position}</p>
+												{person.notes && (
+													<p className='notes'>{person.notes}</p>
+												)}
+											</div>
+										))}
+									</div>
 								</div>
 							</div>
-						</div>
+						)
 					)}
 				</div>
 			</div>
@@ -298,17 +312,17 @@ function processCSVData(csvText) {
 				people: [], // Initialize people array
 			});
 		}
-		
+
 		const existing = showMap.get(normalizedShow);
 		// Update dates if this run is longer
 		if (start < existing.start) existing.start = start;
 		if (end > existing.end) existing.end = end;
-		
+
 		// Add person to the show's people array
 		existing.people.push({
 			name: `${firstName} ${lastName}`,
 			position,
-			notes
+			notes,
 		});
 	}
 
@@ -319,7 +333,9 @@ function processCSVData(csvText) {
 			start: data.start,
 			end: data.end,
 			content: data.originalTitle,
-			title: `${data.originalTitle}\n${data.start.toLocaleDateString()} to ${data.end.toLocaleDateString()}\n${
+			title: `${
+				data.originalTitle
+			}\n${data.start.toLocaleDateString()} to ${data.end.toLocaleDateString()}\n${
 				data.isRevival ? "Revival" : "Original Production"
 			}`,
 			className: `show-item ${data.isRevival ? "revival" : "original"}`,
