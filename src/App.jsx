@@ -16,9 +16,7 @@ function App() {
 
 	useEffect(() => {
 		// Load and process CSV data
-		fetch(
-			"https://docs.google.com/spreadsheets/d/e/2PACX-1vRvvVsG5WsrvGu34883ArpF9AeXiJANjiSRS7r6lzy_-TmZE3LICU7k8BDoVp61hxZuf0jdlP_h6Uk3/pub?gid=0&single=true&output=csv"
-		)
+		fetch(import.meta.env.VITE_DATA_SOURCE_URL)
 			.then((response) => response.text())
 			.then((csvText) => {
 				const processedData = processCSVData(csvText);
@@ -144,7 +142,6 @@ function App() {
 
 	return (
 		<div className='app'>
-			<h1>Broadway Shows Timeline</h1>
 			<div className='timeline-container'>
 				<div id='timeline' className='timeline' ref={timelineRef}></div>
 				<div
@@ -177,14 +174,14 @@ function App() {
 											onClick={() => handleShowClick(show.id)}
 										>
 											<h4>{show.content}</h4>
-											<p className='dates'>
-												{new Date(show.start).toLocaleDateString()} to{" "}
-												{new Date(show.end).toLocaleDateString()}
-											</p>
 											<p className='type'>
 												{show.showType === "revival"
 													? "Revival"
 													: "Original Production"}
+											</p>
+											<p className='dates'>
+												{new Date(show.start).toLocaleDateString()} to{" "}
+												{new Date(show.end).toLocaleDateString()}
 											</p>
 										</div>
 									))}
@@ -194,17 +191,22 @@ function App() {
 					) : (
 						selectedShow && (
 							<div className='show-details'>
-								<h2>{selectedShow.content}</h2>
+								<h2 className='show-title'>{selectedShow.content}</h2>
 								<div className='show-info'>
-									<p className='dates'>
-										{new Date(selectedShow.start).toLocaleDateString()} to{" "}
-										{new Date(selectedShow.end).toLocaleDateString()}
-									</p>
 									<p className='type'>
 										{selectedShow.showType === "revival"
 											? "Revival"
 											: "Original Production"}
 									</p>
+									<div className='dates'>
+										<p className='date'>
+											Opened:{" "}
+											{new Date(selectedShow.start).toLocaleDateString()}
+										</p>
+										<p className='date'>
+											Closed: {new Date(selectedShow.end).toLocaleDateString()}
+										</p>
+									</div>
 									<div className='people-list'>
 										<h3>People</h3>
 										{selectedShow.people?.map((person, index) => (
@@ -272,13 +274,13 @@ function processCSVData(csvText) {
 		const values = parseCSVLine(line);
 
 		const show = values[2];
-		const isRevival = values[3] === "Revival";
-		const startDate = values[4];
-		const endDate = values[5];
+		const isRevival = values[4] === "Revival";
+		const startDate = values[5];
+		const endDate = values[6];
 		const firstName = values[1];
 		const lastName = values[0];
-		const position = values[7];
-		const notes = values[11];
+		const position = values[8];
+		const notes = values[12];
 
 		// Skip if any required values are missing or empty
 		if (!show || !startDate || !endDate) continue;

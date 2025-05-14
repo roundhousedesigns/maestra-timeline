@@ -246,19 +246,21 @@ h1 {
 	padding: 20px;
 }
 
-.show-details h2 {
+.show-title {
 	margin-top: 0;
+	margin-bottom: 0.5rem;
 	color: #333;
 	font-size: 24px;
-}
-
-.show-info {
-	margin-top: 20px;
 }
 
 .dates {
 	color: #666;
 	font-size: 14px;
+	line-height: 1.5;
+}
+
+.date {
+	margin: 0;
 }
 
 .type {
