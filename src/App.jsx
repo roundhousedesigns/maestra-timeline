@@ -6,6 +6,7 @@ import "./App.css";
 function App() {
 	const [timelineData, setTimelineData] = useState({
 		items: [],
+		groups: [],
 	});
 	const [selectedShow, setSelectedShow] = useState(null);
 	const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -48,7 +49,7 @@ function App() {
 				},
 			},
 			// Custom stacking options
-			stack: true,
+			stack: false,
 			stackSubgroups: false,
 			verticalScroll: true,
 			horizontalScroll: true,
@@ -68,7 +69,12 @@ function App() {
 			zoomFriction: 10,
 		};
 
-		const timeline = new Timeline(container, timelineData.items, null, options);
+		const timeline = new Timeline(
+			container,
+			timelineData.items,
+			timelineData.groups,
+			options
+		);
 		timelineInstanceRef.current = timeline;
 
 		// Add click handler
@@ -238,6 +244,9 @@ function processCSVData(csvText) {
 	const lines = csvText.split("\n");
 	const items = [];
 	const showMap = new Map(); // Track unique shows and their dates
+	const theatreMap = new Map(); // Track unique theatres
+	const noTheatreGroup = "No Theatre Specified"; // Base name for no theatre groups
+	const noTheatreShows = new Map(); // Track shows without theatres
 
 	// Helper function to parse CSV line properly
 	function parseCSVLine(line) {
@@ -274,6 +283,7 @@ function processCSVData(csvText) {
 		const values = parseCSVLine(line);
 
 		const show = values[2];
+		const theatre = values[3];
 		const isRevival = values[4] === "Revival";
 		const startDate = values[5];
 		const endDate = values[6];
@@ -282,7 +292,7 @@ function processCSVData(csvText) {
 		const position = values[8];
 		const notes = values[12];
 
-		// Skip if any required values are missing or empty
+		// Skip if any required values are missing or empty (except theatre)
 		if (!show || !startDate || !endDate) continue;
 
 		// Parse dates with error handling
@@ -313,6 +323,7 @@ function processCSVData(csvText) {
 				positions: new Set(),
 				isRevival,
 				originalTitle: show,
+				theatre,
 				people: [], // Initialize people array
 			});
 		}
@@ -332,29 +343,132 @@ function processCSVData(csvText) {
 
 	// Second pass: create timeline items for each unique show
 	showMap.forEach((data, normalizedShow) => {
-		items.push({
-			id: normalizedShow,
-			start: data.start,
-			end: data.end,
-			content: data.originalTitle,
-			title: `${
-				data.originalTitle
-			}\n${data.start.toLocaleDateString()} to ${data.end.toLocaleDateString()}\n${
-				data.isRevival ? "Revival" : "Original Production"
-			}`,
-			className: `show-item ${data.isRevival ? "revival" : "original"}`,
-			showType: data.isRevival ? "revival" : "original",
-			subgroup: data.isRevival ? "revival" : "original",
-			type: "box",
-			people: data.people, // Include people data in the timeline item
-		});
+		// Add theatre to theatreMap if it exists
+		if (data.theatre) {
+			if (!theatreMap.has(data.theatre)) {
+				theatreMap.set(data.theatre, {
+					id: data.theatre,
+					content: data.theatre,
+				});
+			}
+		} else {
+			// Add to noTheatreShows if no theatre specified
+			noTheatreShows.set(normalizedShow, data);
+		}
+
+		// Only add items with theatres in this pass
+		if (data.theatre) {
+			items.push({
+				id: normalizedShow,
+				start: data.start,
+				end: data.end,
+				content: data.originalTitle,
+				title: `${
+					data.originalTitle
+				}\n${data.start.toLocaleDateString()} to ${data.end.toLocaleDateString()}\n${
+					data.isRevival ? "Revival" : "Original Production"
+				}`,
+				className: `show-item ${data.isRevival ? "revival" : "original"}`,
+				showType: data.isRevival ? "revival" : "original",
+				group: data.theatre,
+				type: "box",
+				people: data.people,
+			});
+		}
 	});
 
 	// Sort items by start date
 	items.sort((a, b) => a.start - b.start);
 
+	// Convert theatreMap to array and sort alphabetically
+	const groups = Array.from(theatreMap.values()).sort((a, b) =>
+		a.content.localeCompare(b.content)
+	);
+
+	// Create multiple "No Theatre Specified" groups and distribute shows
+	if (noTheatreShows.size > 0) {
+		// Sort shows by start date
+		const sortedNoTheatreShows = Array.from(noTheatreShows.entries()).sort(
+			(a, b) => a[1].start - b[1].start
+		);
+
+		// Create groups for no theatre shows
+		let currentGroup = 0;
+		let currentGroupEnd = new Date(0);
+
+		sortedNoTheatreShows.forEach(([showId, showData]) => {
+			// If current show starts after the last show in current group ends,
+			// we can add it to the current group
+			if (showData.start > currentGroupEnd) {
+				// Add to current group
+				const groupId = `${noTheatreGroup} ${currentGroup + 1}`;
+				
+				// Create group if it doesn't exist
+				if (!theatreMap.has(groupId)) {
+					theatreMap.set(groupId, {
+						id: groupId,
+						content: groupId,
+					});
+					groups.push(theatreMap.get(groupId));
+				}
+
+				// Add show to items
+				items.push({
+					id: showId,
+					start: showData.start,
+					end: showData.end,
+					content: showData.originalTitle,
+					title: `${
+						showData.originalTitle
+					}\n${showData.start.toLocaleDateString()} to ${showData.end.toLocaleDateString()}\n${
+						showData.isRevival ? "Revival" : "Original Production"
+					}`,
+					className: `show-item ${showData.isRevival ? "revival" : "original"}`,
+					showType: showData.isRevival ? "revival" : "original",
+					group: groupId,
+					type: "box",
+					people: showData.people,
+				});
+
+				// Update current group end time
+				currentGroupEnd = showData.end;
+			} else {
+				// Start a new group
+				currentGroup++;
+				currentGroupEnd = showData.end;
+
+				// Create new group
+				const groupId = `${noTheatreGroup} ${currentGroup + 1}`;
+				theatreMap.set(groupId, {
+					id: groupId,
+					content: groupId,
+				});
+				groups.push(theatreMap.get(groupId));
+
+				// Add show to items
+				items.push({
+					id: showId,
+					start: showData.start,
+					end: showData.end,
+					content: showData.originalTitle,
+					title: `${
+						showData.originalTitle
+					}\n${showData.start.toLocaleDateString()} to ${showData.end.toLocaleDateString()}\n${
+						showData.isRevival ? "Revival" : "Original Production"
+					}`,
+					className: `show-item ${showData.isRevival ? "revival" : "original"}`,
+					showType: showData.isRevival ? "revival" : "original",
+					group: groupId,
+					type: "box",
+					people: showData.people,
+				});
+			}
+		});
+	}
+
 	return {
 		items,
+		groups,
 	};
 }
 

@@ -34,10 +34,11 @@ h1 {
 	position: relative;
 	display: flex;
 	width: 100%;
+	overflow: hidden;
 }
 
 .timeline {
-	width: 100%;
+	width: calc(100% - 200px);
 	height: 60vh;
 	border: 1px solid #ccc;
 	border-radius: 4px;
@@ -142,6 +143,12 @@ h1 {
 .vis-label {
 	font-weight: 500;
 	color: var(--text);
+	background-color: var(--light-gray);
+	border-right: 1px solid var(--gray);
+	padding: 8px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 /* Timeline panel */
@@ -181,6 +188,21 @@ h1 {
 /* Improve visibility of stacked items */
 .vis-item {
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Theatre group styling */
+.vis-labelset .vis-label {
+	background-color: var(--light-gray);
+	border-bottom: 1px solid var(--gray);
+}
+
+.vis-labelset .vis-label:hover {
+	background-color: var(--gray);
+}
+
+/* Ensure theatre labels are visible */
+.vis-labelset {
+	width: 200px !important;
 }
 
 /* Custom tooltip styling */
