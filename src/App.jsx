@@ -29,7 +29,7 @@ function App() {
 
 		const container = document.getElementById("timeline");
 		const options = {
-			height: "80vh",
+			height: "60vh",
 			zoomable: false,
 			moveable: true,
 			orientation: "bottom",
