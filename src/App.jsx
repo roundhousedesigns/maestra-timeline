@@ -63,8 +63,8 @@ function App() {
 			// Disable default tooltips
 			showTooltips: false,
 			// Set zoom constraints
-			zoomMin: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
-			zoomMax: 1000 * 60 * 60 * 24 * 365 * 60, // 60 years
+			// zoomMin: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
+			zoomMax: 1000 * 60 * 60 * 24 * 365 * 30, // 60 years
 			// Set initial zoom level (5 years)
 			zoomFriction: 10,
 		};
@@ -247,6 +247,7 @@ function processCSVData(csvText) {
 	const theatreMap = new Map(); // Track unique theatres
 	const noTheatreGroup = "No Theatre Specified"; // Base name for no theatre groups
 	const noTheatreShows = new Map(); // Track shows without theatres
+	const theatreFirstAppearance = new Map(); // Track when each theatre first appears
 
 	// Helper function to parse CSV line properly
 	function parseCSVLine(line) {
@@ -326,6 +327,11 @@ function processCSVData(csvText) {
 				theatre,
 				people: [], // Initialize people array
 			});
+
+			// Track theatre's first appearance
+			if (theatre && (!theatreFirstAppearance.has(theatre) || start < theatreFirstAppearance.get(theatre))) {
+				theatreFirstAppearance.set(theatre, start);
+			}
 		}
 
 		const existing = showMap.get(normalizedShow);
@@ -380,10 +386,12 @@ function processCSVData(csvText) {
 	// Sort items by start date
 	items.sort((a, b) => a.start - b.start);
 
-	// Convert theatreMap to array and sort alphabetically
-	const groups = Array.from(theatreMap.values()).sort((a, b) =>
-		a.content.localeCompare(b.content)
-	);
+	// Convert theatreMap to array and sort by first appearance
+	const groups = Array.from(theatreMap.values()).sort((a, b) => {
+		const aFirst = theatreFirstAppearance.get(a.id);
+		const bFirst = theatreFirstAppearance.get(b.id);
+		return bFirst - aFirst; // Reversed order: later dates appear at the top
+	});
 
 	// Create multiple "No Theatre Specified" groups and distribute shows
 	if (noTheatreShows.size > 0) {

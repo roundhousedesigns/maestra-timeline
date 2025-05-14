@@ -38,7 +38,7 @@ h1 {
 }
 
 .timeline {
-	width: calc(100% - 200px);
+	width: 100%;
 	height: 60vh;
 	border: 1px solid #ccc;
 	border-radius: 4px;
@@ -237,20 +237,20 @@ h1 {
 
 .side-panel {
 	position: fixed;
-	right: -400px;
+	left: -999px;
 	top: 0;
 	width: 400px;
 	height: 100vh;
 	background: white;
 	box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-	transition: right 0.3s ease-in-out;
+	transition: left 0.3s ease-in-out;
 	z-index: 1000;
 	padding: 20px;
 	overflow-y: auto;
 }
 
 .side-panel.open {
-	right: 0;
+	left: 0;
 }
 
 .close-button {
