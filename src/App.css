@@ -49,9 +49,10 @@ h1 {
 /* Timeline item styling */
 .show-item {
 	border-radius: 4px;
+	border-width: 1px;
 	padding: 4px 8px;
 	font-size: 12px;
-	color: var(--text) !important;
+	color: var(--text);
 	transition: all 0.2s ease;
 	text-align: center;
 	white-space: nowrap;
@@ -62,14 +63,14 @@ h1 {
 
 /* Original show styling */
 .show-item.original {
-	background-color: var(--baby-blue) !important;
-	border: 1px solid var(--baby-blue) !important;
+	background-color: var(--baby-blue);
+	border: 1px solid var(--baby-blue);
 }
 
 /* Revival show styling */
 .show-item.revival {
-	background-color: var(--coral) !important;
-	border: 1px solid var(--coral) !important;
+	background-color: var(--coral);
+	border: 1px solid var(--coral);
 }
 
 /* Hover effects */
@@ -102,41 +103,41 @@ h1 {
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 	z-index: 1000;
 	pointer-events: auto;
-	transition: opacity 0.2s ease-in-out !important;
+	transition: opacity 0.2s ease-in-out;
 }
 
 /* Custom tooltip content styling */
 .custom-tooltip-content {
-	pointer-events: auto !important;
+	pointer-events: auto;
 }
 
 /* Add hover state for tooltip */
 .vis-tooltip:hover,
 .custom-tooltip-content:hover {
-	opacity: 1 !important;
+	opacity: 1;
 }
 
 /* Add styles for future interactive elements */
 .vis-tooltip a,
 .custom-tooltip-content a {
-	color: #4a90e2 !important;
-	text-decoration: none !important;
+	color: #4a90e2;
+	text-decoration: none;
 }
 
 .vis-tooltip a:hover,
 .custom-tooltip-content a:hover {
-	text-decoration: underline !important;
+	text-decoration: underline;
 }
 
 /* Timeline navigation buttons */
 .vis-button {
-	background-color: var(--baby-blue) !important;
-	border-color: var(--baby-blue) !important;
-	color: var(--white) !important;
+	background-color: var(--baby-blue);
+	border-color: var(--baby-blue);
+	color: var(--white);
 }
 
 .vis-button:hover {
-	background-color: var(--baby-blue) !important;
+	background-color: var(--baby-blue);
 }
 
 /* Timeline labels */
@@ -202,7 +203,7 @@ h1 {
 
 /* Ensure theatre labels are visible */
 .vis-labelset {
-	width: 200px !important;
+	width: 200px;
 }
 
 /* Custom tooltip styling */
@@ -222,7 +223,7 @@ h1 {
 
 /* Add hover state for tooltip */
 .custom-tooltip:hover {
-	opacity: 1 !important;
+	opacity: 1;
 }
 
 /* Add styles for future interactive elements */
@@ -378,13 +379,13 @@ h1 {
 
 /* Selected show styling */
 .vis-item.vis-selected {
-	background-color: #4a90e2 !important;
-	border-color: #357abd !important;
-	color: white !important;
-	box-shadow: 0 0 10px rgba(74, 144, 226, 0.5) !important;
-	z-index: 1000 !important;
+	background-color: #4a90e2;
+	border-color: #357abd;
+	color: white;
+	box-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
+	z-index: 1000;
 }
 
 .vis-item.vis-selected .vis-item-content {
-	color: white !important;
+	color: white;
 }

@@ -31,11 +31,13 @@ function App() {
 		const container = document.getElementById("timeline");
 		const options = {
 			height: "60vh",
-			zoomable: false,
+			zoomable: true,
 			moveable: true,
 			orientation: "bottom",
-			start: new Date(1915, 0, 1),
-			end: new Date(),
+			start: new Date(1910, 0, 1),
+			end: new Date(new Date().getFullYear() + 5, 11, 31),
+			min: new Date(1910, 0, 1),
+			max: new Date(new Date().getFullYear() + 2, 11, 31),
 			showCurrentTime: false,
 			showMajorLabels: true,
 			showMinorLabels: true,
@@ -63,8 +65,8 @@ function App() {
 			// Disable default tooltips
 			showTooltips: false,
 			// Set zoom constraints
-			// zoomMin: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
-			zoomMax: 1000 * 60 * 60 * 24 * 365 * 30, // 60 years
+			zoomMin: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
+			zoomMax: 1000 * 60 * 60 * 24 * 365 * 30, // 30 years
 			// Set initial zoom level (5 years)
 			zoomFriction: 10,
 		};
@@ -329,7 +331,11 @@ function processCSVData(csvText) {
 			});
 
 			// Track theatre's first appearance
-			if (theatre && (!theatreFirstAppearance.has(theatre) || start < theatreFirstAppearance.get(theatre))) {
+			if (
+				theatre &&
+				(!theatreFirstAppearance.has(theatre) ||
+					start < theatreFirstAppearance.get(theatre))
+			) {
 				theatreFirstAppearance.set(theatre, start);
 			}
 		}
@@ -410,7 +416,7 @@ function processCSVData(csvText) {
 			if (showData.start > currentGroupEnd) {
 				// Add to current group
 				const groupId = `${noTheatreGroup} ${currentGroup + 1}`;
-				
+
 				// Create group if it doesn't exist
 				if (!theatreMap.has(groupId)) {
 					theatreMap.set(groupId, {
