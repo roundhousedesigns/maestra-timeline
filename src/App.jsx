@@ -50,8 +50,8 @@ function App() {
 					year: "yyyy",
 				},
 			},
-			// Custom stacking options
-			stack: false,
+			// Enable vertical stacking
+			stack: true,
 			stackSubgroups: false,
 			verticalScroll: true,
 			horizontalScroll: true,
@@ -65,10 +65,11 @@ function App() {
 			// Disable default tooltips
 			showTooltips: false,
 			// Set zoom constraints
-			zoomMin: 1000 * 60 * 60 * 24 * 365 * 10, // 10 years
+			zoomMin: 1000 * 60 * 60 * 24 * 365 * 3, // 3 years
 			zoomMax: 1000 * 60 * 60 * 24 * 365 * 30, // 30 years
-			// Set initial zoom level (5 years)
 			zoomFriction: 10,
+			// Enable group height adjustment
+			groupHeightMode: "auto",
 		};
 
 		const timeline = new Timeline(
@@ -182,10 +183,14 @@ function App() {
 											onClick={() => handleShowClick(show.id)}
 										>
 											<h4>{show.content}</h4>
-											<p className='type'>
-												{show.showType === "revival"
-													? "Revival"
-													: "Original Production"}
+											<p
+												className={`type ${
+													show.showType !== "revival" ? "original" : "revival"
+												}`}
+											>
+												{show.showType !== "revival"
+													? "Original Production"
+													: show.showType}
 											</p>
 											<p className='dates'>
 												{new Date(show.start).toLocaleDateString()} to{" "}
@@ -201,10 +206,16 @@ function App() {
 							<div className='show-details'>
 								<h2 className='show-title'>{selectedShow.content}</h2>
 								<div className='show-info'>
-									<p className='type'>
-										{selectedShow.showType === "revival"
-											? "Revival"
-											: "Original Production"}
+									<p
+										className={`type ${
+											selectedShow.showType !== "revival"
+												? "original"
+												: "revival"
+										}`}
+									>
+										{selectedShow.showType !== "revival"
+											? "Original Production"
+											: selectedShow.showType}
 									</p>
 									<div className='dates'>
 										<p className='date'>
@@ -217,20 +228,49 @@ function App() {
 									</div>
 									<div className='people-list'>
 										<h3>People</h3>
-										{selectedShow.people?.map((person, index) => (
-											<div key={index} className='person'>
-												<h4
-													className='person-name'
-													onClick={() => handlePersonClick(person)}
-												>
-													{person.name}
-												</h4>
-												<p className='position'>{person.position}</p>
-												{person.notes && (
-													<p className='notes'>{person.notes}</p>
-												)}
-											</div>
-										))}
+										{selectedShow.people?.map((person, index) => {
+											console.info(person);
+											return (
+												<div key={index} className='person'>
+													<h4
+														className='person-name'
+														onClick={() => handlePersonClick(person)}
+													>
+														{person.name}
+													</h4>
+													{person.position && (
+														<>
+															<p className='position'>{person.position}</p>
+															<p className='dates'>
+																{person.positionStart && (
+																	<>
+																		{person.positionEnd ? (
+																			<>
+																				{new Date(
+																					person.positionStart
+																				).toLocaleDateString()}{" "}
+																				to{" "}
+																				{new Date(
+																					person.positionEnd
+																				).toLocaleDateString()}
+																			</>
+																		) : (
+																			<>
+																				Start:{" "}
+																				{new Date(
+																					person.positionStart
+																				).toLocaleDateString()}
+																			</>
+																		)}
+																	</>
+																)}
+															</p>
+														</>
+													)}
+													{/* TODO: Add picture */}
+												</div>
+											);
+										})}
 									</div>
 								</div>
 							</div>
@@ -246,10 +286,6 @@ function processCSVData(csvText) {
 	const lines = csvText.split("\n");
 	const items = [];
 	const showMap = new Map(); // Track unique shows and their dates
-	const theatreMap = new Map(); // Track unique theatres
-	const noTheatreGroup = "No Theatre Specified"; // Base name for no theatre groups
-	const noTheatreShows = new Map(); // Track shows without theatres
-	const theatreFirstAppearance = new Map(); // Track when each theatre first appears
 
 	// Helper function to parse CSV line properly
 	function parseCSVLine(line) {
@@ -285,32 +321,37 @@ function processCSVData(csvText) {
 
 		const values = parseCSVLine(line);
 
-		const show = values[2];
-		const theatre = values[3];
-		const isRevival = values[4] === "Revival";
-		const startDate = values[5];
-		const endDate = values[6];
-		const firstName = values[1];
 		const lastName = values[0];
-		const position = values[8];
+		const firstName = values[1];
+		const show = values[2];
+		const isRevival = values[3];
+		const opening = values[4];
+		const closing = values[5];
+		// const performances = values[6];
+		const position = values[7];
+		// const ogOrReplacement = values[8];
+		const positionStart = values[9];
+		const positionEnd = values[10];
+		// const maestraProfileUrl = values[11];
 		const notes = values[12];
 
-		// Skip if any required values are missing or empty (except theatre)
-		if (!show || !startDate || !endDate) continue;
+		// Skip if any required values are missing or empty
+		// TODO handle shows still open
+		if (!show || !opening || !closing) continue;
 
 		// Parse dates with error handling
-		let start, end;
+		let openingDate, closingDate;
 		try {
-			start = new Date(startDate);
-			end = new Date(endDate);
+			openingDate = new Date(opening);
+			closingDate = new Date(closing);
 
 			// Check if dates are valid
-			if (isNaN(start.getTime())) {
-				console.error(`Invalid start date for show "${show}": ${startDate}`);
+			if (isNaN(openingDate.getTime())) {
+				console.error(`Invalid start date for show "${show}": ${opening}`);
 				continue;
 			}
-			if (isNaN(end.getTime())) {
-				console.error(`Invalid end date for show "${show}": ${endDate}`);
+			if (isNaN(closingDate.getTime())) {
+				console.error(`Invalid end date for show "${show}": ${closing}`);
 				continue;
 			}
 		} catch (error) {
@@ -321,164 +362,96 @@ function processCSVData(csvText) {
 		const normalizedShow = normalizeShowTitle(show);
 		if (!showMap.has(normalizedShow)) {
 			showMap.set(normalizedShow, {
-				start,
-				end,
+				start: openingDate,
+				end: closingDate,
 				positions: new Set(),
 				isRevival,
 				originalTitle: show,
-				theatre,
 				people: [], // Initialize people array
 			});
-
-			// Track theatre's first appearance
-			if (
-				theatre &&
-				(!theatreFirstAppearance.has(theatre) ||
-					start < theatreFirstAppearance.get(theatre))
-			) {
-				theatreFirstAppearance.set(theatre, start);
-			}
 		}
 
 		const existing = showMap.get(normalizedShow);
-		// Update dates if this run is longer
-		if (start < existing.start) existing.start = start;
-		if (end > existing.end) existing.end = end;
+		if (existing.positionEnd === "End of run" || positionEnd === "EOR") {
+			existing.positionEnd = closingDate;
+		}
 
 		// Add person to the show's people array
 		existing.people.push({
 			name: `${firstName} ${lastName}`,
 			position,
 			notes,
+			positionStart,
+			positionEnd,
 		});
 	}
 
-	// Second pass: create timeline items for each unique show
-	showMap.forEach((data, normalizedShow) => {
-		// Add theatre to theatreMap if it exists
-		if (data.theatre) {
-			if (!theatreMap.has(data.theatre)) {
-				theatreMap.set(data.theatre, {
-					id: data.theatre,
-					content: data.theatre,
-				});
-			}
-		} else {
-			// Add to noTheatreShows if no theatre specified
-			noTheatreShows.set(normalizedShow, data);
-		}
+	// Sort shows by start date
+	const sortedShows = Array.from(showMap.entries()).sort(
+		(a, b) => a[1].start - b[1].start
+	);
 
-		// Only add items with theatres in this pass
-		if (data.theatre) {
-			items.push({
-				id: normalizedShow,
-				start: data.start,
-				end: data.end,
-				content: data.originalTitle,
-				title: `${
-					data.originalTitle
-				}\n${data.start.toLocaleDateString()} to ${data.end.toLocaleDateString()}\n${
-					data.isRevival ? "Revival" : "Original Production"
-				}`,
-				className: `show-item ${data.isRevival ? "revival" : "original"}`,
-				showType: data.isRevival ? "revival" : "original",
-				group: data.theatre,
-				type: "box",
-				people: data.people,
+	// Create tracks for shows to prevent overlapping
+	const tracks = [];
+	sortedShows.forEach(([showId, showData]) => {
+		// Find the first track where this show can fit
+		let trackIndex = 0;
+		let foundTrack = false;
+
+		// Try to find an existing track where this show can fit
+		while (trackIndex < tracks.length) {
+			const track = tracks[trackIndex];
+			// Check if this show can fit in this track (no overlap with any show in the track)
+			const canFit = track.every((show) => {
+				// A show overlaps if:
+				// 1. The new show starts before the existing show ends AND
+				// 2. The new show ends after the existing show starts
+				const noOverlap =
+					showData.start >= show.end || showData.end <= show.start;
+				return noOverlap;
 			});
-		}
-	});
-
-	// Sort items by start date
-	items.sort((a, b) => a.start - b.start);
-
-	// Convert theatreMap to array and sort by first appearance
-	const groups = Array.from(theatreMap.values()).sort((a, b) => {
-		const aFirst = theatreFirstAppearance.get(a.id);
-		const bFirst = theatreFirstAppearance.get(b.id);
-		return bFirst - aFirst; // Reversed order: later dates appear at the top
-	});
-
-	// Create multiple "No Theatre Specified" groups and distribute shows
-	if (noTheatreShows.size > 0) {
-		// Sort shows by start date
-		const sortedNoTheatreShows = Array.from(noTheatreShows.entries()).sort(
-			(a, b) => a[1].start - b[1].start
-		);
-
-		// Create groups for no theatre shows
-		let currentGroup = 0;
-		let currentGroupEnd = new Date(0);
-
-		sortedNoTheatreShows.forEach(([showId, showData]) => {
-			// If current show starts after the last show in current group ends,
-			// we can add it to the current group
-			if (showData.start > currentGroupEnd) {
-				// Add to current group
-				const groupId = `${noTheatreGroup} ${currentGroup + 1}`;
-
-				// Create group if it doesn't exist
-				if (!theatreMap.has(groupId)) {
-					theatreMap.set(groupId, {
-						id: groupId,
-						content: groupId,
-					});
-					groups.push(theatreMap.get(groupId));
-				}
-
-				// Add show to items
-				items.push({
-					id: showId,
-					start: showData.start,
-					end: showData.end,
-					content: showData.originalTitle,
-					title: `${
-						showData.originalTitle
-					}\n${showData.start.toLocaleDateString()} to ${showData.end.toLocaleDateString()}\n${
-						showData.isRevival ? "Revival" : "Original Production"
-					}`,
-					className: `show-item ${showData.isRevival ? "revival" : "original"}`,
-					showType: showData.isRevival ? "revival" : "original",
-					group: groupId,
-					type: "box",
-					people: showData.people,
-				});
-
-				// Update current group end time
-				currentGroupEnd = showData.end;
-			} else {
-				// Start a new group
-				currentGroup++;
-				currentGroupEnd = showData.end;
-
-				// Create new group
-				const groupId = `${noTheatreGroup} ${currentGroup + 1}`;
-				theatreMap.set(groupId, {
-					id: groupId,
-					content: groupId,
-				});
-				groups.push(theatreMap.get(groupId));
-
-				// Add show to items
-				items.push({
-					id: showId,
-					start: showData.start,
-					end: showData.end,
-					content: showData.originalTitle,
-					title: `${
-						showData.originalTitle
-					}\n${showData.start.toLocaleDateString()} to ${showData.end.toLocaleDateString()}\n${
-						showData.isRevival ? "Revival" : "Original Production"
-					}`,
-					className: `show-item ${showData.isRevival ? "revival" : "original"}`,
-					showType: showData.isRevival ? "revival" : "original",
-					group: groupId,
-					type: "box",
-					people: showData.people,
-				});
+			if (canFit) {
+				foundTrack = true;
+				break;
 			}
+			trackIndex++;
+		}
+
+		// If no suitable track found, create a new one
+		if (!foundTrack) {
+			trackIndex = tracks.length;
+			tracks.push([]);
+		}
+
+		// Add show to the track
+		tracks[trackIndex].push({
+			id: showId,
+			start: showData.start,
+			end: showData.end,
+			content: showData.originalTitle,
+			title: `${
+				showData.originalTitle
+			}\n${showData.start.toLocaleDateString()} to ${showData.end.toLocaleDateString()}\n${
+				showData.isRevival ? showData.isRevival : "Original Production"
+			}`,
+			className: `show-item ${showData.isRevival ? "revival" : "original"}`,
+			showType: showData.isRevival ? "revival" : "original",
+			group: `track-${trackIndex + 1}`,
+			type: "box",
+			people: showData.people,
 		});
-	}
+	});
+
+	// Flatten tracks into items array
+	tracks.forEach((track) => {
+		items.push(...track);
+	});
+
+	// Create groups for each track
+	const groups = tracks.map((_, index) => ({
+		id: `track-${index + 1}`,
+		content: `Track ${index + 1}`,
+	}));
 
 	return {
 		items,

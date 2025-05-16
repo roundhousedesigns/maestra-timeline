@@ -191,19 +191,9 @@ h1 {
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-/* Theatre group styling */
-.vis-labelset .vis-label {
-	background-color: var(--light-gray);
-	border-bottom: 1px solid var(--gray);
-}
-
-.vis-labelset .vis-label:hover {
-	background-color: var(--gray);
-}
-
-/* Ensure theatre labels are visible */
+/* Ensure track labels are hidden */
 .vis-labelset {
-	width: 200px;
+	display: none;
 }
 
 /* Custom tooltip styling */
@@ -295,6 +285,14 @@ h1 {
 	margin: 10px 0;
 }
 
+.type.original {
+	background-color: var(--baby-blue);
+}
+
+.type.revival {
+	background-color: var(--coral);
+}
+
 .people-list {
 	margin-top: 20px;
 }
@@ -371,7 +369,6 @@ h1 {
 .show-link .type {
 	display: inline-block;
 	padding: 2px 6px;
-	background: #f0f0f0;
 	border-radius: 4px;
 	font-size: 12px;
 	margin: 5px 0;
