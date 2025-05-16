@@ -190,7 +190,11 @@ function App() {
 											>
 												{show.showType !== "revival"
 													? "Original Production"
-													: show.showType}
+													: show.showType
+															.toLowerCase()
+															.replace(/\b[a-z]/g, function (letter) {
+																return letter.toUpperCase();
+															})}
 											</p>
 											<p className='dates'>
 												{new Date(show.start).toLocaleDateString()} to{" "}
@@ -215,7 +219,11 @@ function App() {
 									>
 										{selectedShow.showType !== "revival"
 											? "Original Production"
-											: selectedShow.showType}
+											: selectedShow.showType
+													.toLowerCase()
+													.replace(/\b[a-z]/g, function (letter) {
+														return letter.toUpperCase();
+													})}
 									</p>
 									<div className='dates'>
 										<p className='date'>
@@ -228,49 +236,76 @@ function App() {
 									</div>
 									<div className='people-list'>
 										<h3>People</h3>
-										{selectedShow.people?.map((person, index) => {
-											console.info(person);
-											return (
-												<div key={index} className='person'>
-													<h4
-														className='person-name'
-														onClick={() => handlePersonClick(person)}
-													>
-														{person.name}
-													</h4>
-													{person.position && (
-														<>
-															<p className='position'>{person.position}</p>
-															<p className='dates'>
-																{person.positionStart && (
-																	<>
-																		{person.positionEnd ? (
+										{(() => {
+											// Group people by name
+											const peopleMap = new Map();
+											selectedShow.people?.forEach((person) => {
+												if (!peopleMap.has(person.name)) {
+													peopleMap.set(person.name, {
+														name: person.name,
+														positions: [],
+														notes: person.notes,
+													});
+												}
+												if (person.position) {
+													peopleMap.get(person.name).positions.push({
+														position: person.position,
+														start: person.positionStart
+															? new Date(person.positionStart)
+															: null,
+														end: person.positionEnd
+															? new Date(person.positionEnd)
+															: null,
+													});
+												}
+											});
+
+											// Sort positions by start date (reverse chronological)
+											peopleMap.forEach((person) => {
+												person.positions.sort((a, b) => {
+													if (!a.start && !b.start) return 0;
+													if (!a.start) return 1;
+													if (!b.start) return -1;
+													return b.start - a.start;
+												});
+											});
+
+											return Array.from(peopleMap.values()).map(
+												(person, index) => (
+													<div key={index} className='person'>
+														<h4
+															className='person-name'
+															onClick={() => handlePersonClick(person)}
+														>
+															{person.name}
+														</h4>
+														{person.positions.map((pos, posIndex) => (
+															<div key={posIndex}>
+																<p className='position'>{pos.position}</p>
+																{pos.start && (
+																	<p className='dates'>
+																		{pos.end &&
+																		!isNaN(pos.end.toLocaleDateString()) ? (
 																			<>
-																				{new Date(
-																					person.positionStart
-																				).toLocaleDateString()}{" "}
-																				to{" "}
-																				{new Date(
-																					person.positionEnd
-																				).toLocaleDateString()}
+																				{pos.start.toLocaleDateString()} to{" "}
+																				{pos.end.toLocaleDateString()}
 																			</>
 																		) : (
 																			<>
-																				Start:{" "}
-																				{new Date(
-																					person.positionStart
-																				).toLocaleDateString()}
+																				Start: {pos.start.toLocaleDateString()}
 																			</>
 																		)}
-																	</>
+																	</p>
 																)}
-															</p>
-														</>
-													)}
-													{/* TODO: Add picture */}
-												</div>
+															</div>
+														))}
+														{person.notes && (
+															<p className='notes'>{person.notes}</p>
+														)}
+													</div>
+												)
 											);
-										})}
+										})()}
 									</div>
 								</div>
 							</div>
