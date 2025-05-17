@@ -209,7 +209,11 @@ function App() {
 											onClick={() => handleShowClick(show.id)}
 										>
 											<h4>{show.content}</h4>
-											<p className={`type ${show.isRevival ? "revival" : "original"}`}>
+											<p
+												className={`type ${
+													show.isRevival ? "revival" : "original"
+												}`}
+											>
 												{!show.isRevival
 													? "Original Production"
 													: show.isRevival
@@ -234,10 +238,13 @@ function App() {
 					) : (
 						selectedShow && (
 							<div className='show-details'>
-								{console.log("Selected show:", selectedShow)}
 								<h2 className='show-title'>{selectedShow.content}</h2>
 								<div className='show-info'>
-									<p className={`type ${selectedShow.isRevival ? "revival" : "original"}`}>
+									<p
+										className={`type ${
+											selectedShow.isRevival ? "revival" : "original"
+										}`}
+									>
 										{!selectedShow.isRevival
 											? "Original Production"
 											: selectedShow.isRevival
@@ -254,10 +261,6 @@ function App() {
 										<p className='date'>
 											Closed: {new Date(selectedShow.end).toLocaleDateString()}
 										</p>
-										{console.log(
-											"Performances value:",
-											selectedShow.performances
-										)}
 										{selectedShow.performances && (
 											<p className='date'>
 												Performances: {selectedShow.performances}
@@ -401,7 +404,6 @@ function processCSVData(csvText) {
 		if (!line) continue;
 
 		const values = parseCSVLine(line);
-		console.log("CSV Values:", values); // Debug log
 
 		const lastName = values[0];
 		const firstName = values[1];
@@ -452,7 +454,6 @@ function processCSVData(csvText) {
 				people: [],
 				performances: performances || null,
 			};
-			console.log("New show data:", showData); // Debug log
 			showMap.set(normalizedShow, showData);
 		}
 

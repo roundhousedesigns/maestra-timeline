@@ -10,11 +10,13 @@
 	--dark-gray: #43464a;
 	--text: #131939;
 	--coral: #e9b79f;
+	--coral-highlight: #fd8e69;
 	--coral-lighter: #edcbbb;
 	--coral-lightest: rgba(233, 183, 159, 0.14);
 	--cream: #f2ebe1;
 	--tan: #ecd8c5;
 	--baby-blue: #9fd3e9;
+	--baby-blue-highlight: #0098da;
 	--forest-green: #213c20;
 }
 
@@ -378,15 +380,26 @@ h1 {
 
 /* Selected show styling */
 .vis-item.vis-selected {
-	background-color: #4a90e2;
-	border-color: #357abd;
-	color: white;
+	border: 2px solid;
+	border-radius: 6px;
 	box-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
+	transform: scale(1.05);
+	transition: transform 0.2s ease;
+	transform-origin: center center;
+	transition: all 100ms ease;
 	z-index: 1000;
 }
 
+.vis-item.vis-selected.original {
+	border-color: var(--baby-blue-highlight);
+}
+
+.vis-item.vis-selected.revival {
+	border-color: var(--coral-highlight);
+}
+
 .vis-item.vis-selected .vis-item-content {
-	color: white;
+	font-weight: bold;
 }
 
 /* Update the show-navigation styles */
