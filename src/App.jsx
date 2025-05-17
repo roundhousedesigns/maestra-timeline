@@ -13,10 +13,14 @@ function App() {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [filteredPeople, setFilteredPeople] = useState([]);
 	const [showSuggestions, setShowSuggestions] = useState(false);
+	const [showSearchQuery, setShowSearchQuery] = useState("");
+	const [filteredShows, setFilteredShows] = useState([]);
+	const [showShowSuggestions, setShowShowSuggestions] = useState(false);
 	const sidePanelRef = useRef(null);
 	const timelineRef = useRef(null);
 	const timelineInstanceRef = useRef(null);
 	const searchRef = useRef(null);
+	const showSearchRef = useRef(null);
 
 	useEffect(() => {
 		// Load and process CSV data
@@ -201,7 +205,12 @@ function App() {
 	// Update filtered people when search query changes
 	useEffect(() => {
 		if (searchQuery.trim() === "") {
-			setFilteredPeople([]);
+			// Show all people when search is empty and suggestions are visible
+			if (showSuggestions) {
+				setFilteredPeople(getAllPeople());
+			} else {
+				setFilteredPeople([]);
+			}
 			return;
 		}
 
@@ -210,13 +219,37 @@ function App() {
 			person.name.toLowerCase().includes(searchQuery.toLowerCase())
 		);
 		setFilteredPeople(filtered);
-	}, [searchQuery, timelineData]);
+	}, [searchQuery, timelineData, showSuggestions]);
+
+	// Update filtered shows when show search query changes
+	useEffect(() => {
+		if (showSearchQuery.trim() === "") {
+			// Show all shows when search is empty and suggestions are visible
+			if (showShowSuggestions) {
+				setFilteredShows(timelineData.items);
+			} else {
+				setFilteredShows([]);
+			}
+			return;
+		}
+
+		const filtered = timelineData.items.filter((show) =>
+			show.content.toLowerCase().includes(showSearchQuery.toLowerCase())
+		);
+		setFilteredShows(filtered);
+	}, [showSearchQuery, timelineData, showShowSuggestions]);
 
 	// Handle click outside of search suggestions
 	useEffect(() => {
 		function handleClickOutside(event) {
 			if (searchRef.current && !searchRef.current.contains(event.target)) {
 				setShowSuggestions(false);
+			}
+			if (
+				showSearchRef.current &&
+				!showSearchRef.current.contains(event.target)
+			) {
+				setShowShowSuggestions(false);
 			}
 		}
 
@@ -234,34 +267,83 @@ function App() {
 		setShowSuggestions(false);
 	};
 
+	// Handle show selection from search
+	const handleShowSelect = (show) => {
+		setSelectedShow(show);
+		setSelectedPerson(null);
+		setIsPanelOpen(true);
+		setShowSearchQuery("");
+		setShowShowSuggestions(false);
+		// Scroll to the show in the timeline
+		timelineInstanceRef.current.moveTo(show.start);
+		// Highlight the show
+		timelineInstanceRef.current.setSelection(show.id);
+	};
+
 	return (
 		<div className='app'>
 			<div className='timeline-container'>
-				<div className='search-container' ref={searchRef}>
-					<input
-						type='text'
-						className='search-input'
-						placeholder='Search for a person...'
-						value={searchQuery}
-						onChange={(e) => {
-							setSearchQuery(e.target.value);
-							setShowSuggestions(true);
-						}}
-						onFocus={() => setShowSuggestions(true)}
-					/>
-					{showSuggestions && filteredPeople.length > 0 && (
-						<div className='search-suggestions'>
-							{filteredPeople.map((person, index) => (
-								<div
-									key={index}
-									className='suggestion-item'
-									onClick={() => handlePersonSelect(person)}
-								>
-									{person.name}
-								</div>
-							))}
-						</div>
-					)}
+				<div className='search-filters'>
+					<div className='person-search-container' ref={searchRef}>
+						<input
+							type='text'
+							className='search-input'
+							placeholder='Search for a person...'
+							value={searchQuery}
+							onChange={(e) => {
+								setSearchQuery(e.target.value);
+								setShowSuggestions(true);
+							}}
+							onFocus={() => {
+								setShowSuggestions(true);
+								// Show all people when focused
+								setFilteredPeople(getAllPeople());
+							}}
+						/>
+						{showSuggestions && filteredPeople.length > 0 && (
+							<div className='search-suggestions'>
+								{filteredPeople.map((person, index) => (
+									<div
+										key={index}
+										className='suggestion-item'
+										onClick={() => handlePersonSelect(person)}
+									>
+										{person.name}
+									</div>
+								))}
+							</div>
+						)}
+					</div>
+					<div className='show-search-container' ref={showSearchRef}>
+						<input
+							type='text'
+							className='search-input'
+							placeholder='Search for a show...'
+							value={showSearchQuery}
+							onChange={(e) => {
+								setShowSearchQuery(e.target.value);
+								setShowShowSuggestions(true);
+							}}
+							onFocus={() => {
+								setShowShowSuggestions(true);
+								// Show all shows when focused
+								setFilteredShows(timelineData.items);
+							}}
+						/>
+						{showShowSuggestions && filteredShows.length > 0 && (
+							<div className='show-search-suggestions'>
+								{filteredShows.map((show, index) => (
+									<div
+										key={index}
+										className='show-search-suggestion-item'
+										onClick={() => handleShowSelect(show)}
+									>
+										{show.content}
+									</div>
+								))}
+							</div>
+						)}
+					</div>
 				</div>
 				<div id='timeline' className='timeline' ref={timelineRef}></div>
 				<div
