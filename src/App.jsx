@@ -236,7 +236,35 @@ function App() {
 		const filtered = timelineData.items.filter((show) =>
 			show.content.toLowerCase().includes(showSearchQuery.toLowerCase())
 		);
-		setFilteredShows(filtered);
+
+		// Group shows by title to check for duplicates
+		const showsByTitle = new Map();
+		filtered.forEach(show => {
+			const title = show.content;
+			if (!showsByTitle.has(title)) {
+				showsByTitle.set(title, []);
+			}
+			showsByTitle.get(title).push(show);
+		});
+
+		// Add year to duplicate titles
+		const processedShows = filtered.map(show => {
+			const showsWithSameTitle = showsByTitle.get(show.content);
+			if (showsWithSameTitle.length > 1) {
+				const year = new Date(show.start).getFullYear();
+				const isOriginal = !show.isRevival;
+				return {
+					...show,
+					displayTitle: `${show.content} (${isOriginal ? 'Original' : year + ' revival'})`
+				};
+			}
+			return {
+				...show,
+				displayTitle: show.content
+			};
+		});
+
+		setFilteredShows(processedShows);
 	}, [showSearchQuery, timelineData, showShowSuggestions]);
 
 	// Handle click outside of search suggestions
@@ -348,7 +376,7 @@ function App() {
 										className='show-search-suggestion-item'
 										onClick={() => handleShowSelect(show)}
 									>
-										{show.content}
+										{show.displayTitle}
 									</div>
 								))}
 							</div>
@@ -611,6 +639,11 @@ function processCSVData(csvText) {
 		return title.toLowerCase().trim();
 	}
 
+	// Helper function to create a unique show identifier
+	function createShowId(show, openingDate) {
+		return `${normalizeShowTitle(show)}_${openingDate.getTime()}`;
+	}
+
 	// First pass: collect all unique shows and their dates
 	for (let i = 1; i < lines.length; i++) {
 		const line = lines[i].trim();
@@ -653,8 +686,8 @@ function processCSVData(csvText) {
 			continue;
 		}
 
-		const normalizedShow = normalizeShowTitle(show);
-		if (!showMap.has(normalizedShow)) {
+		const showId = createShowId(show, openingDate);
+		if (!showMap.has(showId)) {
 			const showData = {
 				start: openingDate,
 				end: closingDate,
@@ -664,10 +697,10 @@ function processCSVData(csvText) {
 				people: [],
 				performances: performances || null,
 			};
-			showMap.set(normalizedShow, showData);
+			showMap.set(showId, showData);
 		}
 
-		const existing = showMap.get(normalizedShow);
+		const existing = showMap.get(showId);
 		if (existing.positionEnd === "End of run" || positionEnd === "EOR") {
 			existing.positionEnd = closingDate;
 		}
