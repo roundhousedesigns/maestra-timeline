@@ -285,8 +285,13 @@ function App() {
 			<div className='timeline-container'>
 				<div className='search-filters'>
 					<div className='person-search-container' ref={searchRef}>
+						<label htmlFor='person-search' className='screen-reader-text'>
+							Search for a person...
+						</label>
 						<input
 							type='text'
+							id='person-search'
+							name='person-search'
 							className='search-input'
 							placeholder='Search for a person...'
 							value={searchQuery}
@@ -315,8 +320,13 @@ function App() {
 						)}
 					</div>
 					<div className='show-search-container' ref={showSearchRef}>
+						<label htmlFor='show-search' className='screen-reader-text'>
+							Search for a show...
+						</label>
 						<input
 							type='text'
+							id='show-search'
+							name='show-search'
 							className='search-input'
 							placeholder='Search for a show...'
 							value={showSearchQuery}
