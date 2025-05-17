@@ -22,6 +22,15 @@
 	--forest-green: #213c20;
 }
 
+.screen-reader-text {
+	position: absolute;
+	left: -9999px;
+	top: auto;
+	visibility: hidden;
+	width: 1px;
+	height: 1px;
+}
+
 .app {
 	padding: 20px;
 	max-width: 100%;

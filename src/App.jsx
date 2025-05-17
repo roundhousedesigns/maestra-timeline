@@ -406,6 +406,43 @@ function App() {
 												<p className='date'>
 													Closed: {new Date(show.end).toLocaleDateString()}
 												</p>
+												<hr />
+												{show.people?.find(
+													(p) => p.name === selectedPerson.name
+												)?.position && (
+													<p className='date'>
+														Position:{" "}
+														{
+															show.people.find(
+																(p) => p.name === selectedPerson.name
+															).position
+														}
+													</p>
+												)}
+												{show.people?.find(
+													(p) => p.name === selectedPerson.name
+												)?.positionStart && (
+													<p className='date'>
+														Position Start:{" "}
+														{new Date(
+															show.people.find(
+																(p) => p.name === selectedPerson.name
+															).positionStart
+														).toLocaleDateString()}
+													</p>
+												)}
+												{show.people?.find(
+													(p) => p.name === selectedPerson.name
+												)?.positionEnd && (
+													<p className='date'>
+														Position End:{" "}
+														{new Date(
+															show.people.find(
+																(p) => p.name === selectedPerson.name
+															).positionEnd
+														).toLocaleDateString()}
+													</p>
+												)}
 											</div>
 										</div>
 									))}
