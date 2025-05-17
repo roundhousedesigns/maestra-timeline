@@ -10,9 +10,13 @@ function App() {
 	const [selectedShow, setSelectedShow] = useState(null);
 	const [isPanelOpen, setIsPanelOpen] = useState(false);
 	const [selectedPerson, setSelectedPerson] = useState(null);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [filteredPeople, setFilteredPeople] = useState([]);
+	const [showSuggestions, setShowSuggestions] = useState(false);
 	const sidePanelRef = useRef(null);
 	const timelineRef = useRef(null);
 	const timelineInstanceRef = useRef(null);
+	const searchRef = useRef(null);
 
 	useEffect(() => {
 		// Load and process CSV data
@@ -166,9 +170,99 @@ function App() {
 		}
 	};
 
+	// Function to get all unique people from timeline data
+	const getAllPeople = () => {
+		const peopleSet = new Set();
+		const peopleMap = new Map();
+
+		timelineData.items.forEach((item) => {
+			item.people?.forEach((person) => {
+				if (!peopleSet.has(person.name)) {
+					peopleSet.add(person.name);
+					peopleMap.set(person.name, {
+						name: person.name,
+						positions: [],
+						notes: person.notes,
+					});
+				}
+				if (person.position) {
+					peopleMap.get(person.name).positions.push({
+						position: person.position,
+						start: person.positionStart ? new Date(person.positionStart) : null,
+						end: person.positionEnd ? new Date(person.positionEnd) : null,
+					});
+				}
+			});
+		});
+
+		return Array.from(peopleMap.values());
+	};
+
+	// Update filtered people when search query changes
+	useEffect(() => {
+		if (searchQuery.trim() === "") {
+			setFilteredPeople([]);
+			return;
+		}
+
+		const allPeople = getAllPeople();
+		const filtered = allPeople.filter((person) =>
+			person.name.toLowerCase().includes(searchQuery.toLowerCase())
+		);
+		setFilteredPeople(filtered);
+	}, [searchQuery, timelineData]);
+
+	// Handle click outside of search suggestions
+	useEffect(() => {
+		function handleClickOutside(event) {
+			if (searchRef.current && !searchRef.current.contains(event.target)) {
+				setShowSuggestions(false);
+			}
+		}
+
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, []);
+
+	// Handle person selection from search
+	const handlePersonSelect = (person) => {
+		setSelectedPerson(person);
+		setIsPanelOpen(true);
+		setSearchQuery("");
+		setShowSuggestions(false);
+	};
+
 	return (
 		<div className='app'>
 			<div className='timeline-container'>
+				<div className='search-container' ref={searchRef}>
+					<input
+						type='text'
+						className='search-input'
+						placeholder='Search for a person...'
+						value={searchQuery}
+						onChange={(e) => {
+							setSearchQuery(e.target.value);
+							setShowSuggestions(true);
+						}}
+						onFocus={() => setShowSuggestions(true)}
+					/>
+					{showSuggestions && filteredPeople.length > 0 && (
+						<div className='search-suggestions'>
+							{filteredPeople.map((person, index) => (
+								<div
+									key={index}
+									className='suggestion-item'
+									onClick={() => handlePersonSelect(person)}
+								>
+									{person.name}
+								</div>
+							))}
+						</div>
+					)}
+				</div>
 				<div id='timeline' className='timeline' ref={timelineRef}></div>
 				<div
 					ref={sidePanelRef}
