@@ -257,6 +257,7 @@ h1 {
 
 .show-details {
 	padding: 20px;
+	min-height: 100%;
 }
 
 .show-title {
@@ -386,4 +387,43 @@ h1 {
 
 .vis-item.vis-selected .vis-item-content {
 	color: white;
+}
+
+/* Update the show-navigation styles */
+.show-navigation {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 20px;
+	padding-top: 20px;
+	border-top: 1px solid var(--gray);
+	gap: 10px;
+}
+
+.nav-button {
+	padding: 8px 16px;
+	background-color: var(--light-gray);
+	border: 1px solid var(--gray);
+	border-radius: 4px;
+	color: var(--text);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	font-size: 14px;
+}
+
+.nav-button:hover {
+	background-color: var(--gray);
+	color: var(--white);
+}
+
+.nav-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.nav-button.prev {
+	margin-right: auto;
+}
+
+.nav-button.next {
+	margin-left: auto;
 }

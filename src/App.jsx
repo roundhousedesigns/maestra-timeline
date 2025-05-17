@@ -149,6 +149,32 @@ function App() {
 		);
 	};
 
+	// Add this function near your other handler functions
+	const handleShowNavigation = (direction) => {
+		// Get all shows sorted by opening date
+		const sortedShows = [...timelineData.items].sort(
+			(a, b) => new Date(a.start) - new Date(b.start)
+		);
+
+		// Find current show's index
+		const currentIndex = sortedShows.findIndex(
+			(show) => show.id === selectedShow.id
+		);
+
+		// Calculate new index
+		const newIndex = direction === "next" ? currentIndex + 1 : currentIndex - 1;
+
+		// Check if new index is valid
+		if (newIndex >= 0 && newIndex < sortedShows.length) {
+			const newShow = sortedShows[newIndex];
+			setSelectedShow(newShow);
+			// Scroll to the show in the timeline
+			timelineInstanceRef.current.moveTo(newShow.start);
+			// Highlight the show
+			timelineInstanceRef.current.setSelection(newShow.id);
+		}
+	};
+
 	return (
 		<div className='app'>
 			<div className='timeline-container'>
@@ -183,23 +209,23 @@ function App() {
 											onClick={() => handleShowClick(show.id)}
 										>
 											<h4>{show.content}</h4>
-											<p
-												className={`type ${
-													show.showType !== "revival" ? "original" : "revival"
-												}`}
-											>
-												{show.showType !== "revival"
+											<p className={`type ${show.isRevival ? "revival" : "original"}`}>
+												{!show.isRevival
 													? "Original Production"
-													: show.showType
+													: show.isRevival
 															.toLowerCase()
 															.replace(/\b[a-z]/g, function (letter) {
 																return letter.toUpperCase();
 															})}
 											</p>
-											<p className='dates'>
-												{new Date(show.start).toLocaleDateString()} to{" "}
-												{new Date(show.end).toLocaleDateString()}
-											</p>
+											<div className='dates'>
+												<p className='date'>
+													Opened: {new Date(show.start).toLocaleDateString()}
+												</p>
+												<p className='date'>
+													Closed: {new Date(show.end).toLocaleDateString()}
+												</p>
+											</div>
 										</div>
 									))}
 								</div>
@@ -208,18 +234,13 @@ function App() {
 					) : (
 						selectedShow && (
 							<div className='show-details'>
+								{console.log("Selected show:", selectedShow)}
 								<h2 className='show-title'>{selectedShow.content}</h2>
 								<div className='show-info'>
-									<p
-										className={`type ${
-											selectedShow.showType !== "revival"
-												? "original"
-												: "revival"
-										}`}
-									>
-										{selectedShow.showType !== "revival"
+									<p className={`type ${selectedShow.isRevival ? "revival" : "original"}`}>
+										{!selectedShow.isRevival
 											? "Original Production"
-											: selectedShow.showType
+											: selectedShow.isRevival
 													.toLowerCase()
 													.replace(/\b[a-z]/g, function (letter) {
 														return letter.toUpperCase();
@@ -233,6 +254,15 @@ function App() {
 										<p className='date'>
 											Closed: {new Date(selectedShow.end).toLocaleDateString()}
 										</p>
+										{console.log(
+											"Performances value:",
+											selectedShow.performances
+										)}
+										{selectedShow.performances && (
+											<p className='date'>
+												Performances: {selectedShow.performances}
+											</p>
+										)}
 									</div>
 									<div className='people-list'>
 										<h3>People</h3>
@@ -308,6 +338,22 @@ function App() {
 										})()}
 									</div>
 								</div>
+								<div className='show-navigation'>
+									<button
+										className='nav-button prev'
+										onClick={() => handleShowNavigation("prev")}
+										aria-label='Previous show'
+									>
+										← Previous
+									</button>
+									<button
+										className='nav-button next'
+										onClick={() => handleShowNavigation("next")}
+										aria-label='Next show'
+									>
+										Next →
+									</button>
+								</div>
 							</div>
 						)
 					)}
@@ -355,6 +401,7 @@ function processCSVData(csvText) {
 		if (!line) continue;
 
 		const values = parseCSVLine(line);
+		console.log("CSV Values:", values); // Debug log
 
 		const lastName = values[0];
 		const firstName = values[1];
@@ -362,7 +409,7 @@ function processCSVData(csvText) {
 		const isRevival = values[3];
 		const opening = values[4];
 		const closing = values[5];
-		// const performances = values[6];
+		const performances = values[6];
 		const position = values[7];
 		// const ogOrReplacement = values[8];
 		const positionStart = values[9];
@@ -396,14 +443,17 @@ function processCSVData(csvText) {
 
 		const normalizedShow = normalizeShowTitle(show);
 		if (!showMap.has(normalizedShow)) {
-			showMap.set(normalizedShow, {
+			const showData = {
 				start: openingDate,
 				end: closingDate,
 				positions: new Set(),
 				isRevival,
 				originalTitle: show,
-				people: [], // Initialize people array
-			});
+				people: [],
+				performances: performances || null,
+			};
+			console.log("New show data:", showData); // Debug log
+			showMap.set(normalizedShow, showData);
 		}
 
 		const existing = showMap.get(normalizedShow);
@@ -470,10 +520,11 @@ function processCSVData(csvText) {
 				showData.isRevival ? showData.isRevival : "Original Production"
 			}`,
 			className: `show-item ${showData.isRevival ? "revival" : "original"}`,
-			showType: showData.isRevival ? "revival" : "original",
+			isRevival: showData.isRevival,
 			group: `track-${trackIndex + 1}`,
 			type: "box",
 			people: showData.people,
+			performances: showData.performances,
 		});
 	});
 
