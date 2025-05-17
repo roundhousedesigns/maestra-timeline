@@ -6,7 +6,6 @@ import "./App.css";
 function App() {
 	const [timelineData, setTimelineData] = useState({
 		items: [],
-		groups: [],
 	});
 	const [selectedShow, setSelectedShow] = useState(null);
 	const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -52,7 +51,6 @@ function App() {
 			},
 			// Enable vertical stacking
 			stack: true,
-			stackSubgroups: false,
 			verticalScroll: true,
 			horizontalScroll: true,
 			// Add more space between items
@@ -68,16 +66,9 @@ function App() {
 			zoomMin: 1000 * 60 * 60 * 24 * 365 * 3, // 3 years
 			zoomMax: 1000 * 60 * 60 * 24 * 365 * 30, // 30 years
 			zoomFriction: 10,
-			// Enable group height adjustment
-			groupHeightMode: "auto",
 		};
 
-		const timeline = new Timeline(
-			container,
-			timelineData.items,
-			timelineData.groups,
-			options
-		);
+		const timeline = new Timeline(container, timelineData.items, options);
 		timelineInstanceRef.current = timeline;
 
 		// Add click handler
@@ -305,13 +296,12 @@ function App() {
 
 											return Array.from(peopleMap.values()).map(
 												(person, index) => (
-													<div key={index} className='person'>
-														<h4
-															className='person-name'
-															onClick={() => handlePersonClick(person)}
-														>
-															{person.name}
-														</h4>
+													<div
+														key={index}
+														className='person-link'
+														onClick={() => handlePersonClick(person)}
+													>
+														<h4 className='person-name'>{person.name}</h4>
 														{person.positions.map((pos, posIndex) => (
 															<div key={posIndex}>
 																<p className='position'>{pos.position}</p>
@@ -413,14 +403,11 @@ function processCSVData(csvText) {
 		const closing = values[5];
 		const performances = values[6];
 		const position = values[7];
-		// const ogOrReplacement = values[8];
 		const positionStart = values[9];
 		const positionEnd = values[10];
-		// const maestraProfileUrl = values[11];
 		const notes = values[12];
 
 		// Skip if any required values are missing or empty
-		// TODO handle shows still open
 		if (!show || !opening || !closing) continue;
 
 		// Parse dates with error handling
@@ -472,45 +459,9 @@ function processCSVData(csvText) {
 		});
 	}
 
-	// Sort shows by start date
-	const sortedShows = Array.from(showMap.entries()).sort(
-		(a, b) => a[1].start - b[1].start
-	);
-
-	// Create tracks for shows to prevent overlapping
-	const tracks = [];
-	sortedShows.forEach(([showId, showData]) => {
-		// Find the first track where this show can fit
-		let trackIndex = 0;
-		let foundTrack = false;
-
-		// Try to find an existing track where this show can fit
-		while (trackIndex < tracks.length) {
-			const track = tracks[trackIndex];
-			// Check if this show can fit in this track (no overlap with any show in the track)
-			const canFit = track.every((show) => {
-				// A show overlaps if:
-				// 1. The new show starts before the existing show ends AND
-				// 2. The new show ends after the existing show starts
-				const noOverlap =
-					showData.start >= show.end || showData.end <= show.start;
-				return noOverlap;
-			});
-			if (canFit) {
-				foundTrack = true;
-				break;
-			}
-			trackIndex++;
-		}
-
-		// If no suitable track found, create a new one
-		if (!foundTrack) {
-			trackIndex = tracks.length;
-			tracks.push([]);
-		}
-
-		// Add show to the track
-		tracks[trackIndex].push({
+	// Convert shows to timeline items
+	showMap.forEach((showData, showId) => {
+		items.push({
 			id: showId,
 			start: showData.start,
 			end: showData.end,
@@ -522,27 +473,14 @@ function processCSVData(csvText) {
 			}`,
 			className: `show-item ${showData.isRevival ? "revival" : "original"}`,
 			isRevival: showData.isRevival,
-			group: `track-${trackIndex + 1}`,
 			type: "box",
 			people: showData.people,
 			performances: showData.performances,
 		});
 	});
 
-	// Flatten tracks into items array
-	tracks.forEach((track) => {
-		items.push(...track);
-	});
-
-	// Create groups for each track
-	const groups = tracks.map((_, index) => ({
-		id: `track-${index + 1}`,
-		content: `Track ${index + 1}`,
-	}));
-
 	return {
 		items,
-		groups,
 	};
 }
 
