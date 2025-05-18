@@ -204,14 +204,18 @@ function App() {
 				if (person.position) {
 					peopleMap.get(person.name).positions.push({
 						position: person.position,
-						start: person.positionStart ? {
-							original: person.positionStart.original,
-							date: person.positionStart.date
-						} : null,
-						end: person.positionEnd ? {
-							original: person.positionEnd.original,
-							date: person.positionEnd.date
-						} : null,
+						start: person.positionStart
+							? {
+									original: person.positionStart.original,
+									date: person.positionStart.date,
+							  }
+							: null,
+						end: person.positionEnd
+							? {
+									original: person.positionEnd.original,
+									date: person.positionEnd.date,
+							  }
+							: null,
 					});
 				}
 			});
@@ -244,10 +248,12 @@ function App() {
 		if (showSearchQuery.trim() === "") {
 			// Show all shows when search is empty and suggestions are visible
 			if (showShowSuggestions) {
-				setFilteredShows(timelineData.items.map(show => ({
-					...show,
-					displayTitle: show.content
-				})));
+				setFilteredShows(
+					timelineData.items.map((show) => ({
+						...show,
+						displayTitle: show.content,
+					}))
+				);
 			} else {
 				setFilteredShows([]);
 			}
@@ -390,10 +396,12 @@ function App() {
 							onFocus={() => {
 								setShowShowSuggestions(true);
 								// Show all shows when focused
-								setFilteredShows(timelineData.items.map(show => ({
-									...show,
-									displayTitle: show.content
-								})));
+								setFilteredShows(
+									timelineData.items.map((show) => ({
+										...show,
+										displayTitle: show.content,
+									}))
+								);
 							}}
 						/>
 						{showShowSuggestions && filteredShows.length > 0 && (
@@ -469,7 +477,13 @@ function App() {
 													Opened: {new Date(show.start).toLocaleDateString()}
 												</p>
 												<p className='date'>
-													Closed: {new Date(show.end).toLocaleDateString()}
+													{show.end ? (
+														<>
+															Closed: {new Date(show.end).toLocaleDateString()}
+														</>
+													) : (
+														<>Currently running</>
+													)}
 												</p>
 												<hr />
 												{show.people?.find(
@@ -489,9 +503,11 @@ function App() {
 												)?.positionStart && (
 													<p className='date'>
 														Position Start:{" "}
-														{show.people.find(
-															(p) => p.name === selectedPerson.name
-														).positionStart.original}
+														{
+															show.people.find(
+																(p) => p.name === selectedPerson.name
+															).positionStart.original
+														}
 													</p>
 												)}
 												{show.people?.find(
@@ -499,9 +515,11 @@ function App() {
 												)?.positionEnd && (
 													<p className='date'>
 														Position End:{" "}
-														{show.people.find(
-															(p) => p.name === selectedPerson.name
-														).positionEnd.original}
+														{
+															show.people.find(
+																(p) => p.name === selectedPerson.name
+															).positionEnd.original
+														}
 													</p>
 												)}
 											</div>
@@ -534,7 +552,14 @@ function App() {
 											{new Date(selectedShow.start).toLocaleDateString()}
 										</p>
 										<p className='date'>
-											Closed: {new Date(selectedShow.end).toLocaleDateString()}
+											{selectedShow.end ? (
+												<>
+													Closed:{" "}
+													{new Date(selectedShow.end).toLocaleDateString()}
+												</>
+											) : (
+												<>Currently running</>
+											)}
 										</p>
 										{selectedShow.performances && (
 											<p className='date'>
@@ -558,14 +583,18 @@ function App() {
 												if (person.position) {
 													peopleMap.get(person.name).positions.push({
 														position: person.position,
-														start: person.positionStart ? {
-															original: person.positionStart.original,
-															date: person.positionStart.date
-														} : null,
-														end: person.positionEnd ? {
-															original: person.positionEnd.original,
-															date: person.positionEnd.date
-														} : null,
+														start: person.positionStart
+															? {
+																	original: person.positionStart.original,
+																	date: person.positionStart.date,
+															  }
+															: null,
+														end: person.positionEnd
+															? {
+																	original: person.positionEnd.original,
+																	date: person.positionEnd.date,
+															  }
+															: null,
 													});
 												}
 											});
@@ -593,14 +622,14 @@ function App() {
 																<p className='position'>{pos.position}</p>
 																{pos.start && (
 																	<p className='dates'>
-																		{pos.end?.date && !isNaN(pos.end.date.getTime()) ? (
+																		{pos.end?.date &&
+																		!isNaN(pos.end.date.getTime()) ? (
 																			<>
-																				{pos.start.original} to {pos.end.original}
+																				{pos.start.original} to{" "}
+																				{pos.end.original}
 																			</>
 																		) : (
-																			<>
-																				Start: {pos.start.original}
-																			</>
+																			<>Start: {pos.start.original}</>
 																		)}
 																	</p>
 																)}
@@ -697,20 +726,20 @@ function processCSVData(csvText) {
 		const notes = values[12];
 
 		// Skip if any required values are missing or empty
-		if (!show || !opening || !closing) continue;
+		if (!show || !opening) continue;
 
 		// Parse dates with error handling
 		let openingDate, closingDate;
 		try {
 			openingDate = new Date(opening);
-			closingDate = new Date(closing);
+			closingDate = closing ? new Date(closing) : false;
 
 			// Check if dates are valid
 			if (isNaN(openingDate.getTime())) {
 				console.error(`Invalid start date for show "${show}": ${opening}`);
 				continue;
 			}
-			if (isNaN(closingDate.getTime())) {
+			if (closingDate !== false && isNaN(closingDate.getTime())) {
 				console.error(`Invalid end date for show "${show}": ${closing}`);
 				continue;
 			}
@@ -740,14 +769,21 @@ function processCSVData(csvText) {
 			name: `${firstName} ${lastName}`,
 			position,
 			notes,
-			positionStart: positionStart ? {
-				original: positionStart,
-				date: new Date(positionStart)
-			} : null,
-			positionEnd: positionEnd ? {
-				original: positionEnd === "EOR" ? "End of run" : positionEnd,
-				date: positionEnd === "EOR" || positionEnd === "End of run" ? closingDate : new Date(positionEnd)
-			} : null,
+			positionStart: positionStart
+				? {
+						original: positionStart,
+						date: new Date(positionStart),
+				  }
+				: null,
+			positionEnd: positionEnd
+				? {
+						original: positionEnd === "EOR" ? "End of run" : positionEnd,
+						date:
+							positionEnd === "EOR" || positionEnd === "End of run"
+								? closingDate
+								: new Date(positionEnd),
+				  }
+				: null,
 		});
 	}
 
@@ -756,11 +792,13 @@ function processCSVData(csvText) {
 		items.push({
 			id: showId,
 			start: showData.start,
-			end: showData.end,
+			...(showData.end && { end: showData.end }),
 			content: showData.originalTitle,
 			title: `${
 				showData.originalTitle
-			}\n${showData.start.toLocaleDateString()} to ${showData.end.toLocaleDateString()}\n${
+			}\n${showData.start.toLocaleDateString()} to ${
+				showData.end ? showData.end.toLocaleDateString() : "Currently running"
+			}\n${
 				showData.isRevival ? showData.isRevival : "Original Production"
 			}`,
 			className: `show-item ${showData.isRevival ? "revival" : "original"}`,
