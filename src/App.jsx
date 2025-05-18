@@ -221,7 +221,14 @@ function App() {
 			});
 		});
 
-		return Array.from(peopleMap.values());
+		// Convert to array and sort by last name
+		return Array.from(peopleMap.values()).sort((a, b) => {
+			const aNameParts = a.name.split(' ');
+			const bNameParts = b.name.split(' ');
+			const aLastName = aNameParts[aNameParts.length - 1];
+			const bLastName = bNameParts[bNameParts.length - 1];
+			return aLastName.localeCompare(bLastName);
+		});
 	};
 
 	// Update filtered people when search query changes
@@ -249,10 +256,12 @@ function App() {
 			// Show all shows when search is empty and suggestions are visible
 			if (showShowSuggestions) {
 				setFilteredShows(
-					timelineData.items.map((show) => ({
-						...show,
-						displayTitle: show.content,
-					}))
+					timelineData.items
+						.map((show) => ({
+							...show,
+							displayTitle: show.content,
+						}))
+						.sort((a, b) => a.content.localeCompare(b.content))
 				);
 			} else {
 				setFilteredShows([]);
@@ -294,6 +303,8 @@ function App() {
 			};
 		});
 
+		// Sort the processed shows alphabetically
+		processedShows.sort((a, b) => a.displayTitle.localeCompare(b.displayTitle));
 		setFilteredShows(processedShows);
 	}, [showSearchQuery, timelineData, showShowSuggestions]);
 
@@ -397,10 +408,12 @@ function App() {
 								setShowShowSuggestions(true);
 								// Show all shows when focused
 								setFilteredShows(
-									timelineData.items.map((show) => ({
-										...show,
-										displayTitle: show.content,
-									}))
+									timelineData.items
+										.map((show) => ({
+											...show,
+											displayTitle: show.content,
+										}))
+										.sort((a, b) => a.content.localeCompare(b.content))
 								);
 							}}
 						/>
