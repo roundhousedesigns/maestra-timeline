@@ -255,11 +255,23 @@ function App() {
 		if (showSearchQuery.trim() === "") {
 			// Show all shows when search is empty and suggestions are visible
 			if (showShowSuggestions) {
+				// Group shows by title to check for duplicates
+				const showsByTitle = new Map();
+				timelineData.items.forEach((show) => {
+					const title = show.content;
+					if (!showsByTitle.has(title)) {
+						showsByTitle.set(title, []);
+					}
+					showsByTitle.get(title).push(show);
+				});
+
 				setFilteredShows(
 					timelineData.items
 						.map((show) => ({
 							...show,
-							displayTitle: show.content,
+							displayTitle: showsByTitle.get(show.content).length > 1
+								? `${show.content} (${new Date(show.start).getFullYear()} ${show.isRevival ? 'revival' : 'original production'})`
+								: show.content,
 						}))
 						.sort((a, b) => a.content.localeCompare(b.content))
 				);
@@ -283,25 +295,13 @@ function App() {
 			showsByTitle.get(title).push(show);
 		});
 
-		// Add year to duplicate titles
-		const processedShows = filtered.map((show) => {
-			const showsWithSameTitle = showsByTitle.get(show.content);
-			if (showsWithSameTitle.length > 1) {
-				const year = new Date(show.start).getFullYear();
-				const isOriginal = !show.isRevival;
-				return {
-					...show,
-					displayTitle: `${show.content} (${
-						isOriginal ? "Original" : year + " revival"
-					})`,
-				};
-			}
-
-			return {
-				...show,
-				displayTitle: show.content,
-			};
-		});
+		// Add year and production type only to duplicate titles
+		const processedShows = filtered.map((show) => ({
+			...show,
+			displayTitle: showsByTitle.get(show.content).length > 1
+				? `${show.content} (${new Date(show.start).getFullYear()} ${show.isRevival ? 'revival' : 'original production'})`
+				: show.content,
+		}));
 
 		// Sort the processed shows alphabetically
 		processedShows.sort((a, b) => a.displayTitle.localeCompare(b.displayTitle));
@@ -411,7 +411,7 @@ function App() {
 									timelineData.items
 										.map((show) => ({
 											...show,
-											displayTitle: show.content,
+											displayTitle: `${show.content} (${new Date(show.start).getFullYear()} ${show.isRevival ? 'revival' : 'original production'})`,
 										}))
 										.sort((a, b) => a.content.localeCompare(b.content))
 								);
