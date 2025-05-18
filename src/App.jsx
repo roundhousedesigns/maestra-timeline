@@ -10,6 +10,7 @@ function App() {
 	const [selectedShow, setSelectedShow] = useState(null);
 	const [isPanelOpen, setIsPanelOpen] = useState(false);
 	const [selectedPerson, setSelectedPerson] = useState(null);
+	const [previousShow, setPreviousShow] = useState(null);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [filteredPeople, setFilteredPeople] = useState([]);
 	const [showSuggestions, setShowSuggestions] = useState(false);
@@ -109,6 +110,7 @@ function App() {
 				!timelineRef.current.contains(event.target)
 			) {
 				setIsPanelOpen(false);
+				setPreviousShow(null);
 			}
 		}
 
@@ -125,6 +127,7 @@ function App() {
 
 	// Function to handle person click
 	const handlePersonClick = (person) => {
+		setPreviousShow(selectedShow);
 		setSelectedPerson(person);
 	};
 
@@ -174,6 +177,15 @@ function App() {
 		}
 	};
 
+	const handleBackToShow = () => {
+		setSelectedShow(previousShow);
+		setSelectedPerson(null);
+		// Scroll to the show in the timeline
+		timelineInstanceRef.current.moveTo(previousShow.start);
+		// Highlight the show
+		timelineInstanceRef.current.setSelection(previousShow.id);
+	};
+
 	// Function to get all unique people from timeline data
 	const getAllPeople = () => {
 		const peopleSet = new Set();
@@ -192,8 +204,14 @@ function App() {
 				if (person.position) {
 					peopleMap.get(person.name).positions.push({
 						position: person.position,
-						start: person.positionStart ? new Date(person.positionStart) : null,
-						end: person.positionEnd ? new Date(person.positionEnd) : null,
+						start: person.positionStart ? {
+							original: person.positionStart.original,
+							date: person.positionStart.date
+						} : null,
+						end: person.positionEnd ? {
+							original: person.positionEnd.original,
+							date: person.positionEnd.date
+						} : null,
 					});
 				}
 			});
@@ -226,7 +244,10 @@ function App() {
 		if (showSearchQuery.trim() === "") {
 			// Show all shows when search is empty and suggestions are visible
 			if (showShowSuggestions) {
-				setFilteredShows(timelineData.items);
+				setFilteredShows(timelineData.items.map(show => ({
+					...show,
+					displayTitle: show.content
+				})));
 			} else {
 				setFilteredShows([]);
 			}
@@ -239,7 +260,7 @@ function App() {
 
 		// Group shows by title to check for duplicates
 		const showsByTitle = new Map();
-		filtered.forEach(show => {
+		filtered.forEach((show) => {
 			const title = show.content;
 			if (!showsByTitle.has(title)) {
 				showsByTitle.set(title, []);
@@ -248,19 +269,22 @@ function App() {
 		});
 
 		// Add year to duplicate titles
-		const processedShows = filtered.map(show => {
+		const processedShows = filtered.map((show) => {
 			const showsWithSameTitle = showsByTitle.get(show.content);
 			if (showsWithSameTitle.length > 1) {
 				const year = new Date(show.start).getFullYear();
 				const isOriginal = !show.isRevival;
 				return {
 					...show,
-					displayTitle: `${show.content} (${isOriginal ? 'Original' : year + ' revival'})`
+					displayTitle: `${show.content} (${
+						isOriginal ? "Original" : year + " revival"
+					})`,
 				};
 			}
+
 			return {
 				...show,
-				displayTitle: show.content
+				displayTitle: show.content,
 			};
 		});
 
@@ -293,6 +317,7 @@ function App() {
 		setIsPanelOpen(true);
 		setSearchQuery("");
 		setShowSuggestions(false);
+		setPreviousShow(null);
 	};
 
 	// Handle show selection from search
@@ -365,7 +390,10 @@ function App() {
 							onFocus={() => {
 								setShowShowSuggestions(true);
 								// Show all shows when focused
-								setFilteredShows(timelineData.items);
+								setFilteredShows(timelineData.items.map(show => ({
+									...show,
+									displayTitle: show.content
+								})));
 							}}
 						/>
 						{showShowSuggestions && filteredShows.length > 0 && (
@@ -399,6 +427,15 @@ function App() {
 					</button>
 					{selectedPerson ? (
 						<div className='person-details'>
+							{previousShow && (
+								<button
+									className='back-button'
+									onClick={handleBackToShow}
+									aria-label={`Back to ${previousShow.content}`}
+								>
+									← Back to {previousShow.content}
+								</button>
+							)}
 							<h2>{selectedPerson.name}</h2>
 							<div className='person-info'>
 								<p className='position'>{selectedPerson.position}</p>
@@ -452,11 +489,9 @@ function App() {
 												)?.positionStart && (
 													<p className='date'>
 														Position Start:{" "}
-														{new Date(
-															show.people.find(
-																(p) => p.name === selectedPerson.name
-															).positionStart
-														).toLocaleDateString()}
+														{show.people.find(
+															(p) => p.name === selectedPerson.name
+														).positionStart.original}
 													</p>
 												)}
 												{show.people?.find(
@@ -464,11 +499,9 @@ function App() {
 												)?.positionEnd && (
 													<p className='date'>
 														Position End:{" "}
-														{new Date(
-															show.people.find(
-																(p) => p.name === selectedPerson.name
-															).positionEnd
-														).toLocaleDateString()}
+														{show.people.find(
+															(p) => p.name === selectedPerson.name
+														).positionEnd.original}
 													</p>
 												)}
 											</div>
@@ -525,12 +558,14 @@ function App() {
 												if (person.position) {
 													peopleMap.get(person.name).positions.push({
 														position: person.position,
-														start: person.positionStart
-															? new Date(person.positionStart)
-															: null,
-														end: person.positionEnd
-															? new Date(person.positionEnd)
-															: null,
+														start: person.positionStart ? {
+															original: person.positionStart.original,
+															date: person.positionStart.date
+														} : null,
+														end: person.positionEnd ? {
+															original: person.positionEnd.original,
+															date: person.positionEnd.date
+														} : null,
 													});
 												}
 											});
@@ -538,10 +573,10 @@ function App() {
 											// Sort positions by start date (reverse chronological)
 											peopleMap.forEach((person) => {
 												person.positions.sort((a, b) => {
-													if (!a.start && !b.start) return 0;
-													if (!a.start) return 1;
-													if (!b.start) return -1;
-													return b.start - a.start;
+													if (!a.start?.date && !b.start?.date) return 0;
+													if (!a.start?.date) return 1;
+													if (!b.start?.date) return -1;
+													return b.start.date - a.start.date;
 												});
 											});
 
@@ -558,15 +593,13 @@ function App() {
 																<p className='position'>{pos.position}</p>
 																{pos.start && (
 																	<p className='dates'>
-																		{pos.end &&
-																		!isNaN(pos.end.toLocaleDateString()) ? (
+																		{pos.end?.date && !isNaN(pos.end.date.getTime()) ? (
 																			<>
-																				{pos.start.toLocaleDateString()} to{" "}
-																				{pos.end.toLocaleDateString()}
+																				{pos.start.original} to {pos.end.original}
 																			</>
 																		) : (
 																			<>
-																				Start: {pos.start.toLocaleDateString()}
+																				Start: {pos.start.original}
 																			</>
 																		)}
 																	</p>
@@ -701,17 +734,20 @@ function processCSVData(csvText) {
 		}
 
 		const existing = showMap.get(showId);
-		if (existing.positionEnd === "End of run" || positionEnd === "EOR") {
-			existing.positionEnd = closingDate;
-		}
 
 		// Add person to the show's people array
 		existing.people.push({
 			name: `${firstName} ${lastName}`,
 			position,
 			notes,
-			positionStart,
-			positionEnd,
+			positionStart: positionStart ? {
+				original: positionStart,
+				date: new Date(positionStart)
+			} : null,
+			positionEnd: positionEnd ? {
+				original: positionEnd === "EOR" ? "End of run" : positionEnd,
+				date: positionEnd === "EOR" || positionEnd === "End of run" ? closingDate : new Date(positionEnd)
+			} : null,
 		});
 	}
 

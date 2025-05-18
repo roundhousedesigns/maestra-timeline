@@ -490,6 +490,25 @@ h1 {
 	color: var(--dark-gray);
 }
 
+.back-button {
+	display: inline-flex;
+	align-items: center;
+	padding: 8px 16px;
+	margin-bottom: 16px;
+	background-color: var(--light-gray);
+	border: 1px solid var(--gray);
+	border-radius: 4px;
+	color: var(--text);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	font-size: 14px;
+}
+
+.back-button:hover {
+	background-color: var(--gray);
+	color: var(--white);
+}
+
 /* Search container styling */
 .search-filters {
 	display: flex;
