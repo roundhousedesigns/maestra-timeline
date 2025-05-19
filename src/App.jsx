@@ -628,9 +628,9 @@ function App() {
 								{selectedPerson.maestraProfileUrl && (
 									<a
 										href={selectedPerson.maestraProfileUrl}
-										target="_blank"
-										rel="noopener noreferrer"
-										className="maestra-profile-link"
+										target='_blank'
+										rel='noopener noreferrer'
+										className='maestra-profile-link'
 										aria-label={`View ${selectedPerson.name}'s Maestra Profile`}
 									>
 										Maestra Profile
@@ -931,6 +931,10 @@ function processCSVData(csvText) {
 		const positionEnd = values[10];
 		const maestraProfileUrl = values[11];
 		const notes = values[12];
+
+		if (maestraProfileUrl) {
+			console.log(maestraProfileUrl);
+		}
 
 		// Skip if any required values are missing or empty
 		if (!show || !opening) continue;
