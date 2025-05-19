@@ -328,10 +328,8 @@ h1 {
 	border-bottom: none;
 }
 
-.person-header {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
+.person-name {
+	margin: 0;
 }
 
 .person h4 {
@@ -358,20 +356,8 @@ h1 {
 	padding: 20px 0;
 }
 
-.person-details h2 {
-	display: inline-block;
-	margin-right: 1rem;
-}
-
 .maestra-profile-link {
 	display: inline-block;
-	padding: 0.5rem 1rem;
-	background-color: var(--coral);
-	color: var(--text);
-	text-decoration: none;
-	border-radius: 4px;
-	font-size: 0.9rem;
-	transition: background-color 0.2s ease;
 }
 
 .maestra-profile-link:hover {

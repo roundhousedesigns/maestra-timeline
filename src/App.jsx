@@ -623,20 +623,18 @@ function App() {
 									← Back to {previousShow.content}
 								</button>
 							)}
-							<div className='person-header'>
-								<h2>{selectedPerson.name}</h2>
-								{selectedPerson.maestraProfileUrl && (
-									<a
-										href={selectedPerson.maestraProfileUrl}
-										target='_blank'
-										rel='noopener noreferrer'
-										className='maestra-profile-link'
-										aria-label={`View ${selectedPerson.name}'s Maestra Profile`}
-									>
-										Maestra Profile
-									</a>
-								)}
-							</div>
+							<h2 className='person-name'>{selectedPerson.name}</h2>
+							{selectedPerson.maestraProfileUrl && (
+								<a
+									href={selectedPerson.maestraProfileUrl}
+									target='_blank'
+									rel='noopener noreferrer'
+									className='maestra-profile-link'
+									aria-label={`View ${selectedPerson.name}'s Maestra Profile`}
+								>
+									Maestra Profile &rarr;
+								</a>
+							)}
 							<div className='person-info'>
 								<p className='position'>{selectedPerson.position}</p>
 								{selectedPerson.notes && (
