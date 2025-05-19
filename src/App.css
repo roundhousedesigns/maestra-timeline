@@ -360,15 +360,6 @@ h1 {
 	display: inline-block;
 }
 
-.maestra-profile-link:hover {
-	background-color: var(--coral-lighter);
-}
-
-.maestra-profile-link:focus {
-	outline: 2px solid #0056b3;
-	outline-offset: 2px;
-}
-
 .show-link {
 	background-color: var(--light-gray);
 	border: 1px solid var(--gray);
