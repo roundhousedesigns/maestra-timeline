@@ -369,12 +369,6 @@ h1 {
 	outline-offset: 2px;
 }
 
-.person-name {
-	cursor: pointer;
-	color: #4a90e2;
-	text-decoration: none;
-}
-
 .show-link {
 	background-color: var(--light-gray);
 	border: 1px solid var(--gray);
