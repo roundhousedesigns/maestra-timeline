@@ -42,8 +42,12 @@ const TIMELINE_OPTIONS = {
 
 // Utility functions
 const formatDate = (date) => date.toLocaleDateString();
-const capitalizeWords = (str) => str.toLowerCase().replace(/\b[a-z]/g, letter => letter.toUpperCase());
-const getDisplayTitle = (show) => `${show.content} (${new Date(show.start).getFullYear()} ${show.isRevival ? 'revival' : 'original production'})`;
+const capitalizeWords = (str) =>
+	str.toLowerCase().replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
+const getDisplayTitle = (show) =>
+	`${show.content} (${new Date(show.start).getFullYear()} ${
+		show.isRevival ? "revival" : "original production"
+	})`;
 
 function App() {
 	// Timeline data
@@ -77,16 +81,20 @@ function App() {
 	const showSearchRef = useRef(null);
 
 	// Memoize the sorted shows for navigation
-	const sortedShows = useMemo(() => 
-		[...timelineData.items].sort((a, b) => new Date(a.start) - new Date(b.start)),
+	const sortedShows = useMemo(
+		() =>
+			[...timelineData.items].sort(
+				(a, b) => new Date(a.start) - new Date(b.start)
+			),
 		[timelineData.items]
 	);
 
 	// Memoize the person shows list
-	const getPersonShows = useMemo(() => (personName) => 
-		timelineData.items.filter((item) =>
-			item.people.some((p) => p.name === personName)
-		),
+	const getPersonShows = useMemo(
+		() => (personName) =>
+			timelineData.items.filter((item) =>
+				item.people.some((p) => p.name === personName)
+			),
 		[timelineData.items]
 	);
 
@@ -104,7 +112,11 @@ function App() {
 		if (timelineData.items.length === 0) return;
 
 		const container = document.getElementById("timeline");
-		const timeline = new Timeline(container, timelineData.items, TIMELINE_OPTIONS);
+		const timeline = new Timeline(
+			container,
+			timelineData.items,
+			TIMELINE_OPTIONS
+		);
 		timelineInstanceRef.current = timeline;
 
 		// Add click handler
@@ -208,6 +220,7 @@ function App() {
 						name: person.name,
 						positions: [],
 						notes: person.notes,
+						maestraProfileUrl: person.maestraProfileUrl,
 					});
 				}
 				if (person.position) {
@@ -232,8 +245,8 @@ function App() {
 
 		// Convert to array and sort by last name
 		return Array.from(peopleMap.values()).sort((a, b) => {
-			const aNameParts = a.name.split(' ');
-			const bNameParts = b.name.split(' ');
+			const aNameParts = a.name.split(" ");
+			const bNameParts = b.name.split(" ");
 			const aLastName = aNameParts[aNameParts.length - 1];
 			const bLastName = bNameParts[bNameParts.length - 1];
 			return aLastName.localeCompare(bLastName);
@@ -278,9 +291,12 @@ function App() {
 					timelineData.items
 						.map((show) => ({
 							...show,
-							displayTitle: showsByTitle.get(show.content).length > 1
-								? `${show.content} (${new Date(show.start).getFullYear()} ${show.isRevival ? 'revival' : 'original production'})`
-								: show.content,
+							displayTitle:
+								showsByTitle.get(show.content).length > 1
+									? `${show.content} (${new Date(show.start).getFullYear()} ${
+											show.isRevival ? "revival" : "original production"
+									  })`
+									: show.content,
 						}))
 						.sort((a, b) => a.content.localeCompare(b.content))
 				);
@@ -307,9 +323,12 @@ function App() {
 		// Add year and production type only to duplicate titles
 		const processedShows = filtered.map((show) => ({
 			...show,
-			displayTitle: showsByTitle.get(show.content).length > 1
-				? `${show.content} (${new Date(show.start).getFullYear()} ${show.isRevival ? 'revival' : 'original production'})`
-				: show.content,
+			displayTitle:
+				showsByTitle.get(show.content).length > 1
+					? `${show.content} (${new Date(show.start).getFullYear()} ${
+							show.isRevival ? "revival" : "original production"
+					  })`
+					: show.content,
 		}));
 
 		// Sort the processed shows alphabetically
@@ -364,23 +383,23 @@ function App() {
 		if (!showSuggestions) return;
 
 		switch (e.key) {
-			case 'ArrowDown':
+			case "ArrowDown":
 				e.preventDefault();
-				setActivePersonIndex((prev) => 
+				setActivePersonIndex((prev) =>
 					prev < filteredPeople.length - 1 ? prev + 1 : prev
 				);
 				break;
-			case 'ArrowUp':
+			case "ArrowUp":
 				e.preventDefault();
 				setActivePersonIndex((prev) => (prev > 0 ? prev - 1 : prev));
 				break;
-			case 'Enter':
+			case "Enter":
 				e.preventDefault();
 				if (activePersonIndex >= 0) {
 					handlePersonSelect(filteredPeople[activePersonIndex]);
 				}
 				break;
-			case 'Escape':
+			case "Escape":
 				e.preventDefault();
 				setShowSuggestions(false);
 				setActivePersonIndex(-1);
@@ -392,23 +411,23 @@ function App() {
 		if (!showShowSuggestions) return;
 
 		switch (e.key) {
-			case 'ArrowDown':
+			case "ArrowDown":
 				e.preventDefault();
-				setActiveShowIndex((prev) => 
+				setActiveShowIndex((prev) =>
 					prev < filteredShows.length - 1 ? prev + 1 : prev
 				);
 				break;
-			case 'ArrowUp':
+			case "ArrowUp":
 				e.preventDefault();
 				setActiveShowIndex((prev) => (prev > 0 ? prev - 1 : prev));
 				break;
-			case 'Enter':
+			case "Enter":
 				e.preventDefault();
 				if (activeShowIndex >= 0) {
 					handleShowSelect(filteredShows[activeShowIndex]);
 				}
 				break;
-			case 'Escape':
+			case "Escape":
 				e.preventDefault();
 				setShowShowSuggestions(false);
 				setActiveShowIndex(-1);
@@ -418,7 +437,7 @@ function App() {
 
 	// Add this new function after the existing handler functions
 	const handleSidePanelKeyDown = (e) => {
-		if (e.key === 'Escape') {
+		if (e.key === "Escape") {
 			e.preventDefault();
 			setIsPanelOpen(false);
 			setSelectedPerson(null);
@@ -472,25 +491,31 @@ function App() {
 								setFilteredPeople(getAllPeople());
 							}}
 							onKeyDown={handlePersonKeyDown}
-							role="combobox"
+							role='combobox'
 							aria-expanded={showSuggestions}
-							aria-controls="person-suggestions"
-							aria-activedescendant={activePersonIndex >= 0 ? `person-${activePersonIndex}` : undefined}
-							aria-autocomplete="list"
+							aria-controls='person-suggestions'
+							aria-activedescendant={
+								activePersonIndex >= 0
+									? `person-${activePersonIndex}`
+									: undefined
+							}
+							aria-autocomplete='list'
 						/>
 						{showSuggestions && filteredPeople.length > 0 && (
-							<div 
-								id="person-suggestions"
+							<div
+								id='person-suggestions'
 								className='search-suggestions'
-								role="listbox"
+								role='listbox'
 							>
 								{filteredPeople.map((person, index) => (
 									<div
 										key={index}
 										id={`person-${index}`}
-										className={`suggestion-item ${index === activePersonIndex ? 'active' : ''}`}
+										className={`suggestion-item ${
+											index === activePersonIndex ? "active" : ""
+										}`}
 										onClick={() => handlePersonSelect(person)}
-										role="option"
+										role='option'
 										aria-selected={index === activePersonIndex}
 										tabIndex={-1}
 									>
@@ -520,7 +545,7 @@ function App() {
 								setShowShowSuggestions(true);
 								setFilteredShows(
 									timelineData.items
-										.map(show => ({
+										.map((show) => ({
 											...show,
 											displayTitle: getDisplayTitle(show),
 										}))
@@ -528,25 +553,29 @@ function App() {
 								);
 							}}
 							onKeyDown={handleShowKeyDown}
-							role="combobox"
+							role='combobox'
 							aria-expanded={showShowSuggestions}
-							aria-controls="show-suggestions"
-							aria-activedescendant={activeShowIndex >= 0 ? `show-${activeShowIndex}` : undefined}
-							aria-autocomplete="list"
+							aria-controls='show-suggestions'
+							aria-activedescendant={
+								activeShowIndex >= 0 ? `show-${activeShowIndex}` : undefined
+							}
+							aria-autocomplete='list'
 						/>
 						{showShowSuggestions && filteredShows.length > 0 && (
-							<div 
-								id="show-suggestions"
+							<div
+								id='show-suggestions'
 								className='show-search-suggestions'
-								role="listbox"
+								role='listbox'
 							>
 								{filteredShows.map((show, index) => (
 									<div
 										key={index}
 										id={`show-${index}`}
-										className={`show-search-suggestion-item ${index === activeShowIndex ? 'active' : ''}`}
+										className={`show-search-suggestion-item ${
+											index === activeShowIndex ? "active" : ""
+										}`}
 										onClick={() => handleShowSelect(show)}
-										role="option"
+										role='option'
 										aria-selected={index === activeShowIndex}
 										tabIndex={-1}
 									>
@@ -561,8 +590,8 @@ function App() {
 				<div
 					ref={sidePanelRef}
 					className={`side-panel ${isPanelOpen ? "open" : ""}`}
-					role="dialog"
-					aria-modal="true"
+					role='dialog'
+					aria-modal='true'
 					aria-label={selectedPerson ? "Person Details" : "Show Details"}
 					tabIndex={-1}
 					onKeyDown={handleSidePanelKeyDown}
@@ -575,12 +604,12 @@ function App() {
 							setSelectedPerson(null);
 							mainContentRef.current?.focus();
 						}}
-						aria-label="Close details panel"
+						aria-label='Close details panel'
 					>
 						×
 					</button>
 					{selectedPerson ? (
-						<div 
+						<div
 							className='person-details'
 							ref={personDetailsRef}
 							tabIndex={-1}
@@ -594,7 +623,20 @@ function App() {
 									← Back to {previousShow.content}
 								</button>
 							)}
-							<h2>{selectedPerson.name}</h2>
+							<div className='person-header'>
+								<h2>{selectedPerson.name}</h2>
+								{selectedPerson.maestraProfileUrl && (
+									<a
+										href={selectedPerson.maestraProfileUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="maestra-profile-link"
+										aria-label={`View ${selectedPerson.name}'s Maestra Profile`}
+									>
+										Maestra Profile
+									</a>
+								)}
+							</div>
 							<div className='person-info'>
 								<p className='position'>{selectedPerson.position}</p>
 								{selectedPerson.notes && (
@@ -608,18 +650,24 @@ function App() {
 											className='show-link'
 											onClick={() => handleShowClick(show.id)}
 											onKeyDown={(e) => {
-												if (e.key === 'Enter' || e.key === ' ') {
+												if (e.key === "Enter" || e.key === " ") {
 													e.preventDefault();
 													handleShowClick(show.id);
 												}
 											}}
-											role="button"
+											role='button'
 											tabIndex={0}
 											aria-label={`View details for ${show.content}`}
 										>
 											<h4>{show.content}</h4>
-											<p className={`type ${show.isRevival ? "revival" : "original"}`}>
-												{!show.isRevival ? "Original Production" : capitalizeWords(show.isRevival)}
+											<p
+												className={`type ${
+													show.isRevival ? "revival" : "original"
+												}`}
+											>
+												{!show.isRevival
+													? "Original Production"
+													: capitalizeWords(show.isRevival)}
 											</p>
 											<div className='dates'>
 												<p className='date'>
@@ -677,15 +725,17 @@ function App() {
 						</div>
 					) : (
 						selectedShow && (
-							<div 
-								className='show-details'
-								ref={showDetailsRef}
-								tabIndex={-1}
-							>
+							<div className='show-details' ref={showDetailsRef} tabIndex={-1}>
 								<h2 className='show-title'>{selectedShow.content}</h2>
 								<div className='show-info'>
-									<p className={`type ${selectedShow.isRevival ? "revival" : "original"}`}>
-										{!selectedShow.isRevival ? "Original Production" : capitalizeWords(selectedShow.isRevival)}
+									<p
+										className={`type ${
+											selectedShow.isRevival ? "revival" : "original"
+										}`}
+									>
+										{!selectedShow.isRevival
+											? "Original Production"
+											: capitalizeWords(selectedShow.isRevival)}
 									</p>
 									<div className='dates'>
 										<p className='date'>
@@ -751,12 +801,12 @@ function App() {
 														className='person-link'
 														onClick={() => handlePersonClick(person)}
 														onKeyDown={(e) => {
-															if (e.key === 'Enter' || e.key === ' ') {
+															if (e.key === "Enter" || e.key === " ") {
 																e.preventDefault();
 																handlePersonClick(person);
 															}
 														}}
-														role="button"
+														role='button'
 														tabIndex={0}
 														aria-label={`View details for ${person.name}`}
 													>
@@ -768,7 +818,8 @@ function App() {
 																	<p className='dates'>
 																		{pos.end?.date &&
 																		!isNaN(pos.end.date.getTime()) ? (
-																			pos.start.original === pos.end.original ? (
+																			pos.start.original ===
+																			pos.end.original ? (
 																				pos.start.original
 																			) : (
 																				<>
@@ -817,10 +868,17 @@ function App() {
 	);
 }
 
+/**
+ * Process the CSV data and return the timeline items
+ *
+ * @param {string} csvText - The CSV text to process
+ * @returns {Object} The processed timeline items
+ */
 function processCSVData(csvText) {
 	const lines = csvText.split("\n");
 	const items = [];
 	const showMap = new Map(); // Track unique shows and their dates
+	const personProfileMap = new Map(); // Track person names to their Maestra profile URLs
 
 	// Helper function to parse CSV line properly
 	function parseCSVLine(line) {
@@ -854,7 +912,7 @@ function processCSVData(csvText) {
 		return `${normalizeShowTitle(show)}_${openingDate.getTime()}`;
 	}
 
-	// First pass: collect all unique shows and their dates
+	// First pass: collect all unique shows and their dates, and build person profile map
 	for (let i = 1; i < lines.length; i++) {
 		const line = lines[i].trim();
 		if (!line) continue;
@@ -871,10 +929,17 @@ function processCSVData(csvText) {
 		const position = values[7];
 		const positionStart = values[9];
 		const positionEnd = values[10];
+		const maestraProfileUrl = values[11];
 		const notes = values[12];
 
 		// Skip if any required values are missing or empty
 		if (!show || !opening) continue;
+
+		// Store the Maestra profile URL in the person map if it exists
+		const fullName = `${firstName} ${lastName}`;
+		if (maestraProfileUrl && !personProfileMap.has(fullName)) {
+			personProfileMap.set(fullName, maestraProfileUrl);
+		}
 
 		// Parse dates with error handling
 		let openingDate, closingDate;
@@ -914,7 +979,7 @@ function processCSVData(csvText) {
 
 		// Add person to the show's people array
 		existing.people.push({
-			name: `${firstName} ${lastName}`,
+			name: fullName,
 			position,
 			notes,
 			positionStart: positionStart
@@ -932,6 +997,7 @@ function processCSVData(csvText) {
 								: new Date(positionEnd),
 				  }
 				: null,
+			maestraProfileUrl: personProfileMap.get(fullName) || null,
 		});
 	}
 
@@ -946,9 +1012,7 @@ function processCSVData(csvText) {
 				showData.originalTitle
 			}\n${showData.start.toLocaleDateString()} to ${
 				showData.end ? showData.end.toLocaleDateString() : "Currently running"
-			}\n${
-				showData.isRevival ? showData.isRevival : "Original Production"
-			}`,
+			}\n${showData.isRevival ? showData.isRevival : "Original Production"}`,
 			className: `show-item ${showData.isRevival ? "revival" : "original"}`,
 			isRevival: showData.isRevival,
 			type: "box",
