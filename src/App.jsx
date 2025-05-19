@@ -1,27 +1,94 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { Timeline } from "vis-timeline/standalone";
 import "vis-timeline/styles/vis-timeline-graph2d.css";
 import "./App.css";
 
+// Add these constants at the top of the file, after imports
+const TIMELINE_OPTIONS = {
+	height: "60vh",
+	zoomable: true,
+	moveable: true,
+	orientation: "bottom",
+	start: new Date(1910, 0, 1),
+	end: new Date(new Date().getFullYear() + 5, 11, 31),
+	min: new Date(1910, 0, 1),
+	max: new Date(new Date().getFullYear() + 2, 11, 31),
+	showCurrentTime: false,
+	showMajorLabels: true,
+	showMinorLabels: true,
+	format: {
+		minorLabels: {
+			month: "MMM yyyy",
+			year: "yyyy",
+		},
+		majorLabels: {
+			year: "yyyy",
+		},
+	},
+	stack: true,
+	verticalScroll: true,
+	horizontalScroll: true,
+	margin: {
+		item: {
+			horizontal: 2,
+			vertical: 5,
+		},
+	},
+	showTooltips: false,
+	zoomMin: 1000 * 60 * 60 * 24 * 365 * 3, // 3 years
+	zoomMax: 1000 * 60 * 60 * 24 * 365 * 30, // 30 years
+	zoomFriction: 10,
+};
+
+// Utility functions
+const formatDate = (date) => date.toLocaleDateString();
+const capitalizeWords = (str) => str.toLowerCase().replace(/\b[a-z]/g, letter => letter.toUpperCase());
+const getDisplayTitle = (show) => `${show.content} (${new Date(show.start).getFullYear()} ${show.isRevival ? 'revival' : 'original production'})`;
+
 function App() {
-	const [timelineData, setTimelineData] = useState({
-		items: [],
-	});
-	const [selectedShow, setSelectedShow] = useState(null);
+	// Timeline data
+	const [timelineData, setTimelineData] = useState({ items: [] });
+	const timelineRef = useRef(null);
+	const timelineInstanceRef = useRef(null);
+
+	// Panel state
 	const [isPanelOpen, setIsPanelOpen] = useState(false);
+	const [selectedShow, setSelectedShow] = useState(null);
 	const [selectedPerson, setSelectedPerson] = useState(null);
 	const [previousShow, setPreviousShow] = useState(null);
+	const sidePanelRef = useRef(null);
+	const closeButtonRef = useRef(null);
+	const mainContentRef = useRef(null);
+	const personDetailsRef = useRef(null);
+	const showDetailsRef = useRef(null);
+
+	// Person search state
 	const [searchQuery, setSearchQuery] = useState("");
 	const [filteredPeople, setFilteredPeople] = useState([]);
 	const [showSuggestions, setShowSuggestions] = useState(false);
+	const [activePersonIndex, setActivePersonIndex] = useState(-1);
+	const searchRef = useRef(null);
+
+	// Show search state
 	const [showSearchQuery, setShowSearchQuery] = useState("");
 	const [filteredShows, setFilteredShows] = useState([]);
 	const [showShowSuggestions, setShowShowSuggestions] = useState(false);
-	const sidePanelRef = useRef(null);
-	const timelineRef = useRef(null);
-	const timelineInstanceRef = useRef(null);
-	const searchRef = useRef(null);
+	const [activeShowIndex, setActiveShowIndex] = useState(-1);
 	const showSearchRef = useRef(null);
+
+	// Memoize the sorted shows for navigation
+	const sortedShows = useMemo(() => 
+		[...timelineData.items].sort((a, b) => new Date(a.start) - new Date(b.start)),
+		[timelineData.items]
+	);
+
+	// Memoize the person shows list
+	const getPersonShows = useMemo(() => (personName) => 
+		timelineData.items.filter((item) =>
+			item.people.some((p) => p.name === personName)
+		),
+		[timelineData.items]
+	);
 
 	useEffect(() => {
 		// Load and process CSV data
@@ -37,47 +104,7 @@ function App() {
 		if (timelineData.items.length === 0) return;
 
 		const container = document.getElementById("timeline");
-		const options = {
-			height: "60vh",
-			zoomable: true,
-			moveable: true,
-			orientation: "bottom",
-			start: new Date(1910, 0, 1),
-			end: new Date(new Date().getFullYear() + 5, 11, 31),
-			min: new Date(1910, 0, 1),
-			max: new Date(new Date().getFullYear() + 2, 11, 31),
-			showCurrentTime: false,
-			showMajorLabels: true,
-			showMinorLabels: true,
-			format: {
-				minorLabels: {
-					month: "MMM yyyy",
-					year: "yyyy",
-				},
-				majorLabels: {
-					year: "yyyy",
-				},
-			},
-			// Enable vertical stacking
-			stack: true,
-			verticalScroll: true,
-			horizontalScroll: true,
-			// Add more space between items
-			margin: {
-				item: {
-					horizontal: 2,
-					vertical: 5,
-				},
-			},
-			// Disable default tooltips
-			showTooltips: false,
-			// Set zoom constraints
-			zoomMin: 1000 * 60 * 60 * 24 * 365 * 3, // 3 years
-			zoomMax: 1000 * 60 * 60 * 24 * 365 * 30, // 30 years
-			zoomFriction: 10,
-		};
-
-		const timeline = new Timeline(container, timelineData.items, options);
+		const timeline = new Timeline(container, timelineData.items, TIMELINE_OPTIONS);
 		timelineInstanceRef.current = timeline;
 
 		// Add click handler
@@ -102,7 +129,6 @@ function App() {
 	// Add click outside handler
 	useEffect(() => {
 		function handleClickOutside(event) {
-			// Check if click is outside both the side panel and the timeline
 			if (
 				sidePanelRef.current &&
 				!sidePanelRef.current.contains(event.target) &&
@@ -111,15 +137,15 @@ function App() {
 			) {
 				setIsPanelOpen(false);
 				setPreviousShow(null);
+				// Return focus to the main content
+				mainContentRef.current?.focus();
 			}
 		}
 
-		// Only add the listener if the panel is open
 		if (isPanelOpen) {
 			document.addEventListener("mousedown", handleClickOutside);
 		}
 
-		// Cleanup
 		return () => {
 			document.removeEventListener("mousedown", handleClickOutside);
 		};
@@ -144,35 +170,18 @@ function App() {
 		}
 	};
 
-	// Function to get all shows for a person
-	const getPersonShows = (personName) => {
-		return timelineData.items.filter((item) =>
-			item.people.some((p) => p.name === personName)
-		);
-	};
-
-	// Add this function near your other handler functions
+	// Update handleShowNavigation to use memoized sortedShows
 	const handleShowNavigation = (direction) => {
-		// Get all shows sorted by opening date
-		const sortedShows = [...timelineData.items].sort(
-			(a, b) => new Date(a.start) - new Date(b.start)
-		);
-
-		// Find current show's index
 		const currentIndex = sortedShows.findIndex(
 			(show) => show.id === selectedShow.id
 		);
 
-		// Calculate new index
 		const newIndex = direction === "next" ? currentIndex + 1 : currentIndex - 1;
 
-		// Check if new index is valid
 		if (newIndex >= 0 && newIndex < sortedShows.length) {
 			const newShow = sortedShows[newIndex];
 			setSelectedShow(newShow);
-			// Scroll to the show in the timeline
 			timelineInstanceRef.current.moveTo(newShow.start);
-			// Highlight the show
 			timelineInstanceRef.current.setSelection(newShow.id);
 		}
 	};
@@ -350,13 +359,101 @@ function App() {
 		timelineInstanceRef.current.setSelection(show.id);
 	};
 
+	// Add these new functions after the existing handler functions
+	const handlePersonKeyDown = (e) => {
+		if (!showSuggestions) return;
+
+		switch (e.key) {
+			case 'ArrowDown':
+				e.preventDefault();
+				setActivePersonIndex((prev) => 
+					prev < filteredPeople.length - 1 ? prev + 1 : prev
+				);
+				break;
+			case 'ArrowUp':
+				e.preventDefault();
+				setActivePersonIndex((prev) => (prev > 0 ? prev - 1 : prev));
+				break;
+			case 'Enter':
+				e.preventDefault();
+				if (activePersonIndex >= 0) {
+					handlePersonSelect(filteredPeople[activePersonIndex]);
+				}
+				break;
+			case 'Escape':
+				e.preventDefault();
+				setShowSuggestions(false);
+				setActivePersonIndex(-1);
+				break;
+		}
+	};
+
+	const handleShowKeyDown = (e) => {
+		if (!showShowSuggestions) return;
+
+		switch (e.key) {
+			case 'ArrowDown':
+				e.preventDefault();
+				setActiveShowIndex((prev) => 
+					prev < filteredShows.length - 1 ? prev + 1 : prev
+				);
+				break;
+			case 'ArrowUp':
+				e.preventDefault();
+				setActiveShowIndex((prev) => (prev > 0 ? prev - 1 : prev));
+				break;
+			case 'Enter':
+				e.preventDefault();
+				if (activeShowIndex >= 0) {
+					handleShowSelect(filteredShows[activeShowIndex]);
+				}
+				break;
+			case 'Escape':
+				e.preventDefault();
+				setShowShowSuggestions(false);
+				setActiveShowIndex(-1);
+				break;
+		}
+	};
+
+	// Add this new function after the existing handler functions
+	const handleSidePanelKeyDown = (e) => {
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			setIsPanelOpen(false);
+			setSelectedPerson(null);
+			// Return focus to the main content
+			mainContentRef.current?.focus();
+		}
+	};
+
+	// Add focus management effect
+	useEffect(() => {
+		if (isPanelOpen) {
+			// Focus the side panel when it opens
+			sidePanelRef.current?.focus();
+		}
+	}, [isPanelOpen]);
+
+	// Add this new effect after the existing focus management effect
+	useEffect(() => {
+		if (isPanelOpen) {
+			// Focus the appropriate top element based on the current view
+			if (selectedPerson) {
+				personDetailsRef.current?.focus();
+			} else if (selectedShow) {
+				showDetailsRef.current?.focus();
+			}
+		}
+	}, [isPanelOpen, selectedPerson, selectedShow]);
+
 	return (
 		<div className='app'>
-			<div className='timeline-container'>
+			<div className='timeline-container' ref={mainContentRef} tabIndex={-1}>
 				<div className='search-filters'>
 					<div className='person-search-container' ref={searchRef}>
 						<label htmlFor='person-search' className='screen-reader-text'>
-							Search for a person...
+							Search for a person
 						</label>
 						<input
 							type='text'
@@ -368,20 +465,34 @@ function App() {
 							onChange={(e) => {
 								setSearchQuery(e.target.value);
 								setShowSuggestions(true);
+								setActivePersonIndex(-1);
 							}}
 							onFocus={() => {
 								setShowSuggestions(true);
-								// Show all people when focused
 								setFilteredPeople(getAllPeople());
 							}}
+							onKeyDown={handlePersonKeyDown}
+							role="combobox"
+							aria-expanded={showSuggestions}
+							aria-controls="person-suggestions"
+							aria-activedescendant={activePersonIndex >= 0 ? `person-${activePersonIndex}` : undefined}
+							aria-autocomplete="list"
 						/>
 						{showSuggestions && filteredPeople.length > 0 && (
-							<div className='search-suggestions'>
+							<div 
+								id="person-suggestions"
+								className='search-suggestions'
+								role="listbox"
+							>
 								{filteredPeople.map((person, index) => (
 									<div
 										key={index}
-										className='suggestion-item'
+										id={`person-${index}`}
+										className={`suggestion-item ${index === activePersonIndex ? 'active' : ''}`}
 										onClick={() => handlePersonSelect(person)}
+										role="option"
+										aria-selected={index === activePersonIndex}
+										tabIndex={-1}
 									>
 										{person.name}
 									</div>
@@ -391,7 +502,7 @@ function App() {
 					</div>
 					<div className='show-search-container' ref={showSearchRef}>
 						<label htmlFor='show-search' className='screen-reader-text'>
-							Search for a show...
+							Search for a show
 						</label>
 						<input
 							type='text'
@@ -403,27 +514,41 @@ function App() {
 							onChange={(e) => {
 								setShowSearchQuery(e.target.value);
 								setShowShowSuggestions(true);
+								setActiveShowIndex(-1);
 							}}
 							onFocus={() => {
 								setShowShowSuggestions(true);
-								// Show all shows when focused
 								setFilteredShows(
 									timelineData.items
-										.map((show) => ({
+										.map(show => ({
 											...show,
-											displayTitle: `${show.content} (${new Date(show.start).getFullYear()} ${show.isRevival ? 'revival' : 'original production'})`,
+											displayTitle: getDisplayTitle(show),
 										}))
 										.sort((a, b) => a.content.localeCompare(b.content))
 								);
 							}}
+							onKeyDown={handleShowKeyDown}
+							role="combobox"
+							aria-expanded={showShowSuggestions}
+							aria-controls="show-suggestions"
+							aria-activedescendant={activeShowIndex >= 0 ? `show-${activeShowIndex}` : undefined}
+							aria-autocomplete="list"
 						/>
 						{showShowSuggestions && filteredShows.length > 0 && (
-							<div className='show-search-suggestions'>
+							<div 
+								id="show-suggestions"
+								className='show-search-suggestions'
+								role="listbox"
+							>
 								{filteredShows.map((show, index) => (
 									<div
 										key={index}
-										className='show-search-suggestion-item'
+										id={`show-${index}`}
+										className={`show-search-suggestion-item ${index === activeShowIndex ? 'active' : ''}`}
 										onClick={() => handleShowSelect(show)}
+										role="option"
+										aria-selected={index === activeShowIndex}
+										tabIndex={-1}
 									>
 										{show.displayTitle}
 									</div>
@@ -436,18 +561,30 @@ function App() {
 				<div
 					ref={sidePanelRef}
 					className={`side-panel ${isPanelOpen ? "open" : ""}`}
+					role="dialog"
+					aria-modal="true"
+					aria-label={selectedPerson ? "Person Details" : "Show Details"}
+					tabIndex={-1}
+					onKeyDown={handleSidePanelKeyDown}
 				>
 					<button
+						ref={closeButtonRef}
 						className='close-button'
 						onClick={() => {
 							setIsPanelOpen(false);
 							setSelectedPerson(null);
+							mainContentRef.current?.focus();
 						}}
+						aria-label="Close details panel"
 					>
 						×
 					</button>
 					{selectedPerson ? (
-						<div className='person-details'>
+						<div 
+							className='person-details'
+							ref={personDetailsRef}
+							tabIndex={-1}
+						>
 							{previousShow && (
 								<button
 									className='back-button'
@@ -470,30 +607,27 @@ function App() {
 											key={index}
 											className='show-link'
 											onClick={() => handleShowClick(show.id)}
+											onKeyDown={(e) => {
+												if (e.key === 'Enter' || e.key === ' ') {
+													e.preventDefault();
+													handleShowClick(show.id);
+												}
+											}}
+											role="button"
+											tabIndex={0}
+											aria-label={`View details for ${show.content}`}
 										>
 											<h4>{show.content}</h4>
-											<p
-												className={`type ${
-													show.isRevival ? "revival" : "original"
-												}`}
-											>
-												{!show.isRevival
-													? "Original Production"
-													: show.isRevival
-															.toLowerCase()
-															.replace(/\b[a-z]/g, function (letter) {
-																return letter.toUpperCase();
-															})}
+											<p className={`type ${show.isRevival ? "revival" : "original"}`}>
+												{!show.isRevival ? "Original Production" : capitalizeWords(show.isRevival)}
 											</p>
 											<div className='dates'>
 												<p className='date'>
-													Opened: {new Date(show.start).toLocaleDateString()}
+													Opened: {formatDate(new Date(show.start))}
 												</p>
 												<p className='date'>
 													{show.end ? (
-														<>
-															Closed: {new Date(show.end).toLocaleDateString()}
-														</>
+														<>Closed: {formatDate(new Date(show.end))}</>
 													) : (
 														<>Currently running</>
 													)}
@@ -543,33 +677,23 @@ function App() {
 						</div>
 					) : (
 						selectedShow && (
-							<div className='show-details'>
+							<div 
+								className='show-details'
+								ref={showDetailsRef}
+								tabIndex={-1}
+							>
 								<h2 className='show-title'>{selectedShow.content}</h2>
 								<div className='show-info'>
-									<p
-										className={`type ${
-											selectedShow.isRevival ? "revival" : "original"
-										}`}
-									>
-										{!selectedShow.isRevival
-											? "Original Production"
-											: selectedShow.isRevival
-													.toLowerCase()
-													.replace(/\b[a-z]/g, function (letter) {
-														return letter.toUpperCase();
-													})}
+									<p className={`type ${selectedShow.isRevival ? "revival" : "original"}`}>
+										{!selectedShow.isRevival ? "Original Production" : capitalizeWords(selectedShow.isRevival)}
 									</p>
 									<div className='dates'>
 										<p className='date'>
-											Opened:{" "}
-											{new Date(selectedShow.start).toLocaleDateString()}
+											Opened: {formatDate(new Date(selectedShow.start))}
 										</p>
 										<p className='date'>
 											{selectedShow.end ? (
-												<>
-													Closed:{" "}
-													{new Date(selectedShow.end).toLocaleDateString()}
-												</>
+												<>Closed: {formatDate(new Date(selectedShow.end))}</>
 											) : (
 												<>Currently running</>
 											)}
@@ -583,7 +707,6 @@ function App() {
 									<div className='people-list'>
 										<h3>People</h3>
 										{(() => {
-											// Group people by name
 											const peopleMap = new Map();
 											selectedShow.people?.forEach((person) => {
 												if (!peopleMap.has(person.name)) {
@@ -612,7 +735,6 @@ function App() {
 												}
 											});
 
-											// Sort positions by start date (reverse chronological)
 											peopleMap.forEach((person) => {
 												person.positions.sort((a, b) => {
 													if (!a.start?.date && !b.start?.date) return 0;
@@ -628,6 +750,15 @@ function App() {
 														key={index}
 														className='person-link'
 														onClick={() => handlePersonClick(person)}
+														onKeyDown={(e) => {
+															if (e.key === 'Enter' || e.key === ' ') {
+																e.preventDefault();
+																handlePersonClick(person);
+															}
+														}}
+														role="button"
+														tabIndex={0}
+														aria-label={`View details for ${person.name}`}
 													>
 														<h4 className='person-name'>{person.name}</h4>
 														{person.positions.map((pos, posIndex) => (
@@ -637,10 +768,14 @@ function App() {
 																	<p className='dates'>
 																		{pos.end?.date &&
 																		!isNaN(pos.end.date.getTime()) ? (
-																			<>
-																				{pos.start.original} to{" "}
-																				{pos.end.original}
-																			</>
+																			pos.start.original === pos.end.original ? (
+																				pos.start.original
+																			) : (
+																				<>
+																					{pos.start.original} to{" "}
+																					{pos.end.original}
+																				</>
+																			)
 																		) : (
 																			<>Start: {pos.start.original}</>
 																		)}

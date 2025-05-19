@@ -579,3 +579,40 @@ input.search-input {
 .show-search-suggestion-item:not(:last-child) {
 	border-bottom: 1px solid var(--gray);
 }
+
+.suggestion-item.active,
+.show-search-suggestion-item.active {
+	background-color: #f0f0f0;
+	outline: 2px solid #007bff;
+	outline-offset: -2px;
+}
+
+.suggestion-item:focus,
+.show-search-suggestion-item:focus {
+	outline: 2px solid #007bff;
+	outline-offset: -2px;
+}
+
+.side-panel:focus {
+	outline: none;
+}
+
+.close-button:focus-visible,
+.back-button:focus-visible,
+.nav-button:focus-visible,
+.show-link:focus-visible,
+.person-link:focus-visible {
+	outline: 2px solid var(--coral);
+	outline-offset: 2px;
+}
+
+/* Ensure focus styles are visible in high contrast mode */
+@media (forced-colors: active) {
+	.close-button:focus,
+	.back-button:focus,
+	.nav-button:focus,
+	.show-link:focus,
+	.person-link:focus {
+		outline: 2px solid CanvasText;
+	}
+}
